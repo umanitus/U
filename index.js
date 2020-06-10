@@ -10,7 +10,7 @@ addEventListener('fetch', event => {
 const USER = {
     image:"https://media-exp1.licdn.com/dms/image/C5103AQEUXnchNk4iSA/profile-displayphoto-shrink_100_100/0?e=1596672000&v=beta&t=0ohJNudOPkva6462OwWv0ACTeaC09gUIYzkxILneTko",
     points:1400,
-    domain:"j.umanitus.workers.dev"
+    domain:"u.umanitus.workers.dev"
 }
 const getProduct = id => {
     return id == "/1239383" ? EXEMPLE_PRODUIT : null
