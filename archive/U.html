@@ -1,0 +1,105 @@
+<html>
+    <head>
+        <title>my U</title>
+        <style>
+            #conversation {
+                height:80%;
+                overflow-y: auto;
+                padding:4px;
+            }
+            .message {
+                font-family:"Calibri";
+                width:60%;
+                padding:5px;
+                border:0px;
+                margin-top:15px;
+                -moz-border-radius: 8px;
+                -webkit-border-radius: 8x;
+                -khtml-border-radius: 8px;
+                border-radius: 8px; 
+            }
+            .fromMe {
+                left:5px;
+                background:#0B93F6;
+                color:white;
+            }
+            .fromU {
+                background:#E5E5EA;
+                color:black;
+                margin-left:30%;
+            }
+            #edition {
+                position:absolute;
+                left:2px;
+                bottom:2px;
+                width:99%;
+            }
+            #edition span, input, textarea {
+              font-family:"Calibri";
+            }
+            #from_to {
+              margin-bottom:5px;
+            }
+            #from_to input {
+              margin-left:5px;
+            }
+            .label#to {
+              margin-left:10px;
+            }
+            #toU {
+              font-size:140%;
+            }
+        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="apple-touch-icon" sizes="180x180" href="https://s3.eu-west-3.amazonaws.com/spotmaker-images/apple-touch-icon-180x180.png">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+        <script>
+            function add(from,message) {
+                $("#conversation").append(
+                  $(`<div class="message ${from == 'me'? 'fromMe':'fromU'}">
+                      <div>from ${from}</div>
+                      <div>${new Date().toLocaleString()}</div>
+                      <div>${message}</div>
+                   </div>`
+                  )
+                ).scrollTop($("#conversation")[0].scrollHeight);
+            }
+            function fromMe(text) {
+              add("me",text);
+              $.get("tou?message="+encodeURIComponent(text),function(data) {
+                add("U",data);
+              });
+            }
+            $(document).ready(function() {
+                $(document).keyup(function( event ) { 
+                    var text=$("#toU").val();
+                    if (text.charAt(text.length-1)=="(")
+                        $("#toU").val(text+")");
+                    if ( event.which == 13 ) {
+                        event.preventDefault();
+                        fromMe($("#toU").val());
+                        $("#toU").blur();
+                    }
+                });
+                $(document).on("click",".u-link",function(e) {
+                  fromMe(e.target.id);
+                });
+                $("#send").click(function(e) {
+                    fromMe($("#toU").val());
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="conversation"></div>
+        <div id="edition">
+            <div id="from_to">
+              <span class="label" id="from">From :</span><input id="+julien_boyreau." value="me"/>
+              <span class="label" id="to">To :</span><input id="+julien_boyreau#+u/+." value="my U"/>
+            </div>
+            <textarea style="width:98%" rows=2  id="toU" placeholder="to my U"></textarea>
+            <!-- <button id="send" style="margin-bottom:5px">Envoyer</button> !-->
+        </div>
+    </body>
+</html>
