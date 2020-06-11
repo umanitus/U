@@ -2,8 +2,8 @@
 Un instrument pour jouer à Umanitus
 
 ## Fait  
-- [x] Héberger sur le Web
-- [x] Faire scaler sans gérer les opérations
+- [x] Etre hébergé sur le Web
+- [x] Scaler sans gérer les opérations
 - [x] Afficher une image sur laquelle se trouve l'Umain
 - [x] Afficher le score de l'Umain
 - [x] Afficher un bouton pour créer une carte
