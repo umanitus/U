@@ -7,13 +7,20 @@ addEventListener('fetch', event => {
  * @param {Request} request
  */
 
-const USER = {
+const ROOT_DOMAIN = ".umanitus.workers.dev";
+
+const getProduct = id => {
+    return id == "/" ? null : EXEMPLE_PRODUIT
+}
+const getOwner = domain => {
+    return domain == "u" ? EXEMPLE_OWNER : null
+}
+const EXEMPLE_OWNER = {
     image:"https://media-exp1.licdn.com/dms/image/C5103AQEUXnchNk4iSA/profile-displayphoto-shrink_100_100/0?e=1596672000&v=beta&t=0ohJNudOPkva6462OwWv0ACTeaC09gUIYzkxILneTko",
     points:1400,
+    phone:"+3368704167",
+    name:"Julien Boyreau",
     domain:"u.umanitus.workers.dev"
-}
-const getProduct = id => {
-    return id == "/1239383" ? EXEMPLE_PRODUIT : null
 }
 const EXEMPLE_PRODUIT = {
     id:1239383,
@@ -29,33 +36,24 @@ const NOUVEAU_PRODUIT = {
     role:"SERVEUR"
 }
 async function handleRequest(request) {
-    let ressource = decodeURIComponent(request.url.split(`https://${USER.domain}`)[1]);
-    if (request.method == "GET") {
-        if (ressource === `/`)
-            return new Response(page(NOUVEAU_PRODUIT), {
+    console.log(key)
+    let url = decodeURIComponent(request.url.split('https://')[1]);
+    let inURL = url.split('/');
+    let owner = getOwner(inURL[0].split(ROOT_DOMAIN)[0]);
+    inURL.shift();
+    let ressource = '/'+inURL.join('/');
+    let method = request.method;
+    
+    if (method == "GET") {
+        let product = getProduct(ressource);
+        return new Response(page(owner,product), {
             status: 200,
             headers: new Headers({
                 "Content-Type": "text/html;charset=UTF-8"
             })
-        })
-        else {
-            let product = getProduct(ressource);
-            if (!product)
-                return new Response(null, {
-                status: 404,
-                headers: new Headers({
-                    "Content-Type": "text/html;charset=UTF-8"
-                })})
-            else
-                return new Response(page(product), {
-                    status: 200,
-                    headers: new Headers({
-                        "Content-Type": "text/html;charset=UTF-8"
-                    })
-                })
-        }
+        });
     }
-    else if (request.method == "POST") {
+    else if (method == "POST") {
         if (ressource == "/#carte/")
             return new Response(card(NOUVEAU_PRODUIT), {
                 status: 200,
@@ -87,34 +85,35 @@ async function handleRequest(request) {
 }
 
 // Pages
-const page = (produit) => `
+const page = (owner,produit) => `
   <html>
-    ${head(produit)}
+    ${head(owner, produit)}
     <body>
-    ${header(USER)}
+    ${header(owner)}
     <div id="cards">
-      ${card(produit)}
+      ${produit ? card(produit) : ''}
     </div>
     </body>
   </html>`
-const head = ({role,id,image,description}) => `
+const head = (owner,produit) => `
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Umanitus">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <link rel="apple-touch-icon" sizes="180x180" href="https://s3.eu-west-3.amazonaws.com/umanitus.com/apple-icon.png" type="image/png">
-
+    
     <!-- Open Graph meta pour Facebook -->
     <meta property="og:title" content="Jouez à Umanitus - Vente" />
-    <meta property="og:url" content="${ id ? 'https://'+USER.domain+'/'+id:''}" />
-    <meta property="og:image" content="${image || ''}" />
-    <meta property="og:description" content="${description || ''}" />
-    <meta property="og:site_name" content="${USER.domain}" />
+    <meta property="og:url" content="${ produit && produit.id ? 'https://'+owner.domain+'/'+produit.id:''}" />
+    <meta property="og:image" content="${produit && produit.image || ''}" />
+    <meta property="og:description" content="${produit && produit.description || ''}" />
+    <meta property="og:site_name" content="${owner.domain}" />
     <meta property="og:type" content="article" />
     <script src="https://unpkg.com/htmx.org@0.0.4"></script>
     ${style()}
   </head>`
+
 const style = () => `
   <style>
     body {
@@ -238,12 +237,12 @@ const style = () => `
         background-color: cadetblue;
     }
   </style>`
-const header = ({points,image}) => `
+const header = (umain) => `
   <nav>
-    <img src="${image}"/>
+    <img src="${umain && umain.image ? umain.image : 'data:image/png;base64,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'}"/>
     <div class="stats">
       <label>Score :</label>
-      <span>${points}</span>
+      <span>${umain && umain.points ? umain.points : '0'}</span>
     </div>
     <button hx-post="/%23carte%2F" hx-target="#cards" hx-swap="afterbegin settle:1s">
       +
@@ -275,12 +274,11 @@ const tag = value => `
     </div>`
 const servir = (id) => `
     ${valoriser("vente")}
-    ${partager()}
     `
 const valoriser = (cas) => `
     <form class="valoriser">
-        <input type="number" pattern="[0-9]*" placeholder="${ cas == 'achat' ? 'ma valeur' : 'le coût pour moi'}"/>
-        <button>Valider</button>
+        <input type="number" name="points" pattern="[0-9]*" placeholder="${ cas == 'achat' ? 'ma valeur' : 'le coût pour moi'}"/>
+        <button hx-post="/${ cas == 'achat' ? 'acheter' : 'vendre'}">Valider</button>
     </form>`
 const partager = (url) => `
     <div class="partager">
