@@ -36,7 +36,6 @@ const NOUVEAU_PRODUIT = {
     role:"SERVEUR"
 }
 async function handleRequest(request) {
-    console.log(key)
     let url = decodeURIComponent(request.url.split('https://')[1]);
     let inURL = url.split('/');
     let owner = getOwner(inURL[0].split(ROOT_DOMAIN)[0]);
@@ -61,6 +60,15 @@ async function handleRequest(request) {
                     "Content-Type": "text/html;charset=UTF-8"
                 })
         })
+        else if (ressource == "/sms") {
+            sendViaSMS("Hello with Twilio", "+33687041667");
+            return new Response(null, {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            })
+        }
         else if (ressource == "/miser") {
             return new Response(valoriser("achat"), {
                 status: 200,
@@ -668,4 +676,14 @@ const from = t => {
     }
     else
         return "?";
+}
+const sendViaSMS = (body, to) => {
+    const http_authorization = "Basic "+btoa(TWILIO_ACCOUNT_SID+":"+TWILIO_ACCOUNT_TOKEN);
+    fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
+        method:"POST",
+        headers: {
+            'Authorization':"Basic "+btoa(TWILIO_ACCOUNT_SID+":"+TWILIO_ACCOUNT_TOKEN)
+        },
+        body: `Body=${encodeURIComponent(body)}&From=${encodeURIComponent(TWILIO_ACCOUNT_NUMBER)}&To=${encodeURIComponent(to)}`
+    })
 }
