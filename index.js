@@ -279,7 +279,7 @@ const servir = (id) => `
     `
 const valoriser = (cas) => `
     <form class="valoriser">
-        <input type="number" pattern="[0-9]*" placeholder="${ cas == 'achat' ? 'ma valeur' : 'mon coût'}"/>
+        <input type="number" pattern="[0-9]*" placeholder="${ cas == 'achat' ? 'ma valeur' : 'le coût pour moi'}"/>
         <button>Valider</button>
     </form>`
 const partager = (url) => `
