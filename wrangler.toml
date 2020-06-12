@@ -2,3 +2,6 @@ name = "u"
 type = "webpack"
 account_id = "dc6801a4938980b7cfe3c8981a117e23"
 workers_dev = true
+kv-namespaces = [
+    { binding = "MY_KV" , id = "ba8293eb4ca8416ebf6e0bbb22e4e9b9"}
+]

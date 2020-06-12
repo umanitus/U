@@ -83,6 +83,13 @@ module.exports =  () => `
     }
     .valoriser {
         display:flex;
+        flex-direction:column;
+    }
+    .valoriser .edition {
+        display:flex;
+    }
+    .valoriser .monnaie {
+        font-style: italic;
     }
     .valoriser input {
         flex:1;
@@ -98,6 +105,7 @@ module.exports =  () => `
     }
     .actions button {
         width:100%;
+        font-size: 150%;
         border-radius:15px;
         color:white;
         border:none;
