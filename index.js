@@ -76,7 +76,7 @@ async function handleRequest(request) {
             })
         }
         else if (ressource.indexOf("/procurer") == 0) {
-            return new Response(partager(`https://${USER.domain}${ressource.substring(9)}`), {
+            return new Response(partager(`https://${owner.domain}${ressource.substring(9)}`), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
