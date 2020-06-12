@@ -7,13 +7,12 @@ addEventListener('fetch', event => {
  * @param {Request} request
  */
 
-const ROOT_DOMAIN = ".umanitus.workers.dev";
 
 const getProduct = id => {
     return id == "/" ? null : EXEMPLE_PRODUIT
 }
 const getOwner = domain => {
-    return domain == "u" ? EXEMPLE_OWNER : null
+    return domain == "u.umanitus.workers.dev" ? EXEMPLE_OWNER : null
 }
 const EXEMPLE_OWNER = {
     image:"https://media-exp1.licdn.com/dms/image/C5103AQEUXnchNk4iSA/profile-displayphoto-shrink_100_100/0?e=1596672000&v=beta&t=0ohJNudOPkva6462OwWv0ACTeaC09gUIYzkxILneTko",
@@ -36,13 +35,10 @@ const NOUVEAU_PRODUIT = {
     role:"SERVEUR"
 }
 async function handleRequest(request) {
-    let url = decodeURIComponent(request.url.split('https://')[1]);
-    let inURL = url.split('/');
-    let owner = getOwner(inURL[0].split(ROOT_DOMAIN)[0]);
-    inURL.shift();
-    let ressource = '/'+inURL.join('/');
+    let link = new URL(request.url);
+    let owner = getOwner(link.hostname);
+    let ressource = decodeURIComponent(link.pathname);
     let method = request.method;
-    
     if (method == "GET") {
         let product = getProduct(ressource);
         return new Response(page(owner,product), {
@@ -50,6 +46,7 @@ async function handleRequest(request) {
             headers: new Headers({
                 "Content-Type": "text/html;charset=UTF-8"
             })
+            
         });
     }
     else if (method == "POST") {
