@@ -18,6 +18,7 @@ module.exports = (produit, role) => `
     </section>
     <section class="tags">
          ${produit.tags.reduce((acc,t) => acc + tag(t),"")}
+         <input name="nouveau_tag" class="nouveau_tag"/>
          <button>+</button>
     </section>
     <section class="actions">

@@ -62,13 +62,17 @@ module.exports =  () => `
         flex-wrap: wrap;
         margin-bottom:3%;
     }
-    .card .tag, .tags button {
+    .card .tag, .tags button, .tags input {
         position:relative;
         background-color:darksalmon;
         padding:2%;
         margin:1%;
         color:white;
         border-radius:15px;
+    }
+    .tags input {
+        background-color:white;
+        color:black;
     }
     .card .tag .close {
         float:right;
