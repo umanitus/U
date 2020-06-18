@@ -30,13 +30,34 @@ async function handleRequest(request) {
     //let user = JSON.parse(await MY_KV.get(link.searchParams.get("key")));
     let method = request.method;
     if (method == "GET") {
-        let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
-        return new Response(page(head(owner,product,style()), header(owner), product ? carte(product , "CLIENT") : null), {
-            status: 200,
-            headers: new Headers({
-                "Content-Type": "text/html;charset=UTF-8"
-            })
-        });
+        if (ressource == "/+.") {
+            let data = await MY_KV.list({prefix:'/+.#./.'});
+            let response = '';
+            for (var i = 0; i < data.keys.length ; i++)
+                response += '('+await MY_KV.get(data.keys[i].name)+').\n';
+            /*
+            data.keys.forEach(async (key) => {
+                let value = await MY_KV.get(key.name);
+                console.log("I have the value "+value)
+                response+=`(${value}).\n`
+            });
+            */
+            return new Response(response, {
+                status:200,
+                headers:new Headers({
+                    "Content-Type":"text/plain"
+                })
+            })                                                   
+        }
+        else {
+            let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
+            return new Response(page(head(owner,product,style()), header(owner), product ? carte(product , "CLIENT") : null), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            });
+        }
     }
     else if (method == "POST") {
         if (ressource == "/#carte/")
