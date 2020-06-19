@@ -114,6 +114,7 @@ module.exports =  () => `
         color:white;
         border:none;
         padding:3%;
+        margin-bottom:3%;
     }
     .partager {
         display:flex;
@@ -125,10 +126,6 @@ module.exports =  () => `
     }
     .partager img {
         width:70%;
-    }
-    .jouer {
-        display:flex;
-        flex-direction: column;
     }
     button.miser {
         background-color: cornflowerblue;

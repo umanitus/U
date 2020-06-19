@@ -19,8 +19,12 @@ const head = require("./display/head.js");
 const style = require("./display/style.js");
 const header = require("./display/header.js");
 const carte = require("./display/carte.js");
+const media = require("./display/media.js");
 const partager = require("./display/partager.js");
 const valoriser = require ("./display/valoriser.js");
+const jouer = require("./display/jouer.js");
+const passer = require("./display/passer.js");
+const servir = require("./display/servir.js");
 const U = require("./U.js");
 
 async function handleRequest(request) {
@@ -35,13 +39,6 @@ async function handleRequest(request) {
             let response = '';
             for (var i = 0; i < data.keys.length ; i++)
                 response += '('+await MY_KV.get(data.keys[i].name)+').\n';
-            /*
-            data.keys.forEach(async (key) => {
-                let value = await MY_KV.get(key.name);
-                console.log("I have the value "+value)
-                response+=`(${value}).\n`
-            });
-            */
             return new Response(response, {
                 status:200,
                 headers:new Headers({
@@ -51,7 +48,7 @@ async function handleRequest(request) {
         }
         else {
             let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
-            return new Response(page(head(owner,product,style()), header(owner), product ? carte(product , "CLIENT") : null), {
+            return new Response(page(head(owner,product,style()), header(owner), product ? carte(media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
