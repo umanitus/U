@@ -57,25 +57,9 @@ module.exports =  () => `
     .card .description {
         text-align:center;
     }
-    .card .tags {
-        display:flex;
-        flex-wrap: wrap;
-        margin-bottom:3%;
-    }
-    .card .tag, .tags button, .tags input {
-        position:relative;
-        background-color:darksalmon;
-        padding:2%;
-        margin:1%;
-        color:white;
-        border-radius:15px;
-    }
     .tags input {
         background-color:white;
         color:black;
-    }
-    .card .tag .close {
-        float:right;
     }
     .actions {
         padding-bottom:2%;
@@ -110,7 +94,8 @@ module.exports =  () => `
     .actions button {
         width:100%;
         font-size: 150%;
-        border-radius:15px;
+        border-radius:30px;
+        box-shadow:  2px 1px 2px 1px rgba(0,0,0,0.6);
         color:white;
         border:none;
         padding:3%;

@@ -25,6 +25,8 @@ const valoriser = require ("./display/valoriser.js");
 const jouer = require("./display/jouer.js");
 const passer = require("./display/passer.js");
 const servir = require("./display/servir.js");
+const taster = require("./display/taster.js");
+const vouloir = require("./display/vouloir.js");
 const U = require("./U.js");
 
 async function handleRequest(request) {
@@ -44,7 +46,7 @@ async function handleRequest(request) {
                 headers:new Headers({
                     "Content-Type":"text/plain"
                 })
-            })                                                   
+            })                      
         }
         else {
             let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
@@ -58,7 +60,7 @@ async function handleRequest(request) {
     }
     else if (method == "POST") {
         if (ressource == "/#carte/")
-            return new Response(carte(NOUVEAU_PRODUIT,""), {
+            return new Response(carte(null, null, null, [servir(),taster(),vouloir()]), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
