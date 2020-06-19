@@ -65,8 +65,15 @@ async function handleRequest(request) {
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
                 })
-        });
-        else if (ressource == "/miser") {
+            });
+        else if (ressource.indexOf("/servir") == 0)
+            return new Response(carte(media(NOUVEAU_PRODUIT), NOUVEAU_PRODUIT.description, ["à vendre"], [valoriser()]), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            });
+        else if (ressource == "/jouer") {
             return new Response(valoriser("achat"), {
                 status: 200,
                 headers: new Headers({
@@ -76,6 +83,16 @@ async function handleRequest(request) {
         }
         else if (ressource.indexOf("/procurer") == 0) {
             return new Response(partager(`https://${owner.domain}${ressource.substring(9)}`), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            })
+        }
+        else if (ressource == "/valoriser") {
+            let b = await request.text();
+            let points = parseInt(b.split("=")[1]);
+            return new Response(valoriser("achat", points , points/100), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
