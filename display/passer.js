@@ -1,3 +1,6 @@
 module.exports = id => `
-    <button style="background-color:black;" hx-post="/passer/${id}" hx-target='closest .card'>Passer</button>
+    <form>
+        <button style="background-color:black;" hx-post="/passer" hx-target='closest .card'>Passer</button>
+        <input name="o" value="${id}" style="display:none"/>
+    </form>
 `

@@ -4,7 +4,7 @@ const tag = value => `
             <div>x</div>
     </div>`
 
-module.exports = (media, title, tags, actions) => `
+module.exports = (id, media, title, tags, actions) => `
   <article class="card">
     <section class="media">
         ${media || ''}
