@@ -1,4 +1,4 @@
-module.exports = (owner,produit,style) => `
+module.exports = (domain,produit,style) => `
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8,10 +8,10 @@ module.exports = (owner,produit,style) => `
     
     <!-- Open Graph meta pour Facebook -->
     <meta property="og:title" content="Jouez à Umanitus - Vente" />
-    <meta property="og:url" content="${ produit && produit.id ? 'https://'+owner.domain+'/'+produit.id:''}" />
+    <meta property="og:url" content="${ produit && produit.id ? 'https://'+domain+'/'+produit.id:''}" />
     <meta property="og:image" content="${produit && produit.image || ''}" />
     <meta property="og:description" content="${produit && produit.description || ''}" />
-    <meta property="og:site_name" content="${owner.domain}" />
+    <meta property="og:site_name" content="${domain}" />
     <meta property="og:type" content="article" />
     <script src="https://unpkg.com/htmx.org@0.0.4"></script>
     ${style}

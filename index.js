@@ -30,33 +30,25 @@ const U = require("./U.js");
 
 async function handleRequest(request) {
     let link = new URL(request.url);
-    let owner = JSON.parse(await MY_KV.get(link.hostname));
+    let domain = link.hostname.split(".")[0];
+    let owner = {};
+    console.log(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
+    owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
+    owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
+    owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
+    
     let ressource = decodeURIComponent(link.pathname);
     let key = link.searchParams.get("key");
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        if (ressource == "/+.") {
-            let data = await MY_KV.list({prefix:'/+.#./.'});
-            let response = '';
-            for (var i = 0; i < data.keys.length ; i++)
-                response += '('+await MY_KV.get(data.keys[i].name)+').\n';
-            return new Response(response, {
-                status:200,
-                headers:new Headers({
-                    "Content-Type":"text/plain"
-                })
+        let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
+        return new Response(page(head(link.hostname,product,style()), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
+            status: 200,
+            headers: new Headers({
+                "Content-Type": "text/html;charset=UTF-8"
             })
-        }
-        else {
-            let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
-            return new Response(page(head(owner,product,style()), header(owner), product ? carte(media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
-                status: 200,
-                headers: new Headers({
-                    "Content-Type": "text/html;charset=UTF-8"
-                })
-            });
-        }
+        });
     }
     else if (method == "POST") {
         if (ressource == "/#carte/") {
