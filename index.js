@@ -14,7 +14,7 @@ const NOUVEAU_PRODUIT = {
 }
 
 const page = require("./display/page.js");
-const head = require("./display/head.js");
+const meta = require("./display/meta.js");
 const style = require("./display/style.js");
 const header = require("./display/header.js");
 const carte = require("./display/carte.js");
@@ -26,24 +26,35 @@ const passer = require("./display/passer.js");
 const servir = require("./display/servir.js");
 const taster = require("./display/taster.js");
 const vouloir = require("./display/vouloir.js");
-const U = require("./U.js");
+//const U = require("./U.js")(MY_KV);
+
+const hashed = async (bytes) => {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);           // hash the message
+    const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    return hashHex;
+}
 
 async function handleRequest(request) {
     let link = new URL(request.url);
     let domain = link.hostname.split(".")[0];
     let owner = {};
-    console.log(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
     owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
     owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
     owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
-    
     let ressource = decodeURIComponent(link.pathname);
     let key = link.searchParams.get("key");
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        let product = ressource == "/" ? null : JSON.parse(await MY_KV.get(ressource)) ;
-        return new Response(page(head(link.hostname,product,style()), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
+        let product = ressource == "/" ? null : JSON.parse(await MY_KV.get("@+"+domain+"."+ressource));
+        
+        if (ressource.indexOf("/#octet//") == -1) 
+            return new Response(product, {
+                status:200
+        })
+        
+        return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
             status: 200,
             headers: new Headers({
                 "Content-Type": "text/html;charset=UTF-8"
@@ -53,7 +64,7 @@ async function handleRequest(request) {
     else if (method == "POST") {
         if (ressource == "/#carte/") {
             let id = `/#carte/+.(+${new Date().toISOString()}:+.+.).(/+:+:+.+.)`;
-            let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
+            //let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
             let encoded = encodeURIComponent(id);
             return new Response(carte(encoded,null, null, null, [servir(id),taster(id),vouloir(id)]), {
                 status: 200,
@@ -61,6 +72,40 @@ async function handleRequest(request) {
                     "Content-Type": "text/html;charset=UTF-8"
                 })
             });
+        }
+        if (ressource == "/#video/") {
+            const { headers } = request ;
+            const contentType = headers.get("content-type");
+            if (contentType.includes("video/")) {
+                try { 
+                    let myBlob = await request.arrayBuffer();
+                    let h = await hashed(myBlob);
+                    let k = await MY_KV.put(`@+${domain}./#octet//+.(+.@+sha256..@+base64.+._${h}.)`,myBlob);
+                    return new Response("in sha256 is "+h, {
+                        status:200,
+                        headers: new Headers({
+                            "Content-Type":"text/plain"
+                        })
+                    });
+                }
+                catch (error) {
+                    return new Response(error, {
+                        status:200,
+                        headers: new Headers({
+                            "Content-Type":"text/plain"
+                        })
+                    });
+                }
+                //let buffer = await myBlob.arrayBuffer();
+                //let h = await hashed(buffer);
+                
+            }
+            return new Response("not doing video baby", {
+                    status:200,
+                    headers: new Headers({
+                        "Content-Type":"text/plain"
+                    })
+                });
         }
         if (ressource == "/servir") {
             let b = await request.text();
