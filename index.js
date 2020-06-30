@@ -47,8 +47,6 @@ async function handleRequest(request) {
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        
-        
         if (ressource.indexOf("/#octet//") != -1) {
             let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
             return new Response(product, {
@@ -81,14 +79,15 @@ async function handleRequest(request) {
             const { headers } = request ;
             const contentType = headers.get("content-type");
             if (contentType.includes("video/")) {
-                try { 
+                try {
                     let myBlob = await request.arrayBuffer();
                     let h = await hashed(myBlob);
-                    let k = await MY_KV.put(`@+${domain}./#octet//+.(+.@+sha256..@+base64.+._${h}.)`,myBlob);
-                    return new Response("in sha256 is "+h, {
+                    let path = `#octet//+.(+.@+sha256..@+base64.+._${h}.)`
+                    let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
+                    return new Response(`<video controls autoplay src='https://${domain}.umanitus.com/${encodeURIComponent(path)}'></video>`, {
                         status:200,
                         headers: new Headers({
-                            "Content-Type":"text/plain"
+                            "Content-Type":"text/html"
                         })
                     });
                 }

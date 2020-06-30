@@ -7,6 +7,29 @@ module.exports = (meta,style,header,cards) =>
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
         <link rel="apple-touch-icon" sizes="180x180" href="https://s3.eu-west-3.amazonaws.com/umanitus.com/apple-icon.png" type="image/png">
         <script src="https://unpkg.com/htmx.org@0.0.4"></script>
+        <script>
+            onload = () => {
+                alert("hello world");
+                document.addEventListener('change', async e => {
+                    if (e.target.id == 'media') {
+                        let file = e.target.files[0];
+                        let upload = await fetch('/'+encodeURIComponent('#video/'), {
+                            method: 'POST',
+                            body: file,
+                            headers: new Headers({
+                                "Content-Type": file.type
+                            })
+                        });
+                        let video_tag = await upload.text();
+                        document.getElementById("label_image").remove();
+                        //e.target.parentNode.removeChild(e.target.parentNode.firstChild);
+                        let container = document.createElement('div');
+                        container.innerHTML = video_tag ;
+                        e.target.parentNode.appendChild(container);
+                    }
+                })
+            }
+        </script>
         ${style}
     </head>
     ${meta || ''}

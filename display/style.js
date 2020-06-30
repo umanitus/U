@@ -47,7 +47,7 @@ module.exports =  () => `
     .card.htmx-settling {
         opacity: 0;
     }
-    .card .media img {
+    .card .media img, .card .media video {
         width:97%;
     }
     .card .description, .tags, .actions {
