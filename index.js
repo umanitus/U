@@ -47,13 +47,17 @@ async function handleRequest(request) {
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        let product = ressource == "/" ? null : JSON.parse(await MY_KV.get("@+"+domain+"."+ressource));
         
-        if (ressource.indexOf("/#octet//") == -1) 
+        
+        if (ressource.indexOf("/#octet//") != -1) {
+            let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
             return new Response(product, {
-                status:200
-        })
-        
+                status:200,
+                headers: new Headers({
+                    "Content-Type": "video/mp4"
+             })
+        })}
+        let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
         return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
             status: 200,
             headers: new Headers({
