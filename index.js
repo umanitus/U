@@ -47,12 +47,13 @@ async function handleRequest(request) {
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        if (ressource.indexOf("/#octet//") != -1) {
+        if (ressource.indexOf(".#octet//") != -1) {
             let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
             return new Response(product, {
                 status:200,
                 headers: new Headers({
-                    "Content-Type": "video/mp4"
+                    "Content-Type": "image/jpg"
+                
              })
         })}
         let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
@@ -79,41 +80,34 @@ async function handleRequest(request) {
             const { headers } = request ;
             const contentType = headers.get("content-type");
             if (contentType.includes("video/")) {
-                try {
-                    let myBlob = await request.arrayBuffer();
-                    let h = await hashed(myBlob);
-                    let path = `#octet//+.(+.@+sha256..@+base64.+._${h}.)`
-                    let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
-                    return new Response(`<video controls autoplay src='https://${domain}.umanitus.com/${encodeURIComponent(path)}'></video>`, {
-                        status:200,
-                        headers: new Headers({
-                            "Content-Type":"text/html"
-                        })
-                    });
-                }
-                catch (error) {
-                    return new Response(error, {
-                        status:200,
-                        headers: new Headers({
-                            "Content-Type":"text/plain"
-                        })
-                    });
-                }
-                //let buffer = await myBlob.arrayBuffer();
-                //let h = await hashed(buffer);
-                
-            }
-            return new Response("not doing video baby", {
+                let myBlob = await request.arrayBuffer();
+                let h = await hashed(myBlob);
+                let path = `#octet//+.(+.@+sha256..@+base64.+._${h}.)`
+                let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
+                return new Response(`<video controls autoplay src='https://${domain}.umanitus.com/${encodeURIComponent(path)}'></video>`, {
                     status:200,
                     headers: new Headers({
-                        "Content-Type":"text/plain"
+                        "Content-Type":"text/html"
                     })
                 });
+            }
+        }
+        if (ressource == "/#image/") {
+            let myBlob = await request.arrayBuffer();
+            let h = await hashed(myBlob);
+            let path = `#image/+.+.#octet//+.(+.@+sha256..@+base64.+._${h}.)`;
+            let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
+            return new Response(carte("3",media({image:`https://${domain}.umanitus.com/${encodeURIComponent(path)}`}),'Qualifier ce que tu vends avec des tags',["à vendre"], []), {
+                status:200,
+                headers: new Headers({
+                    "Content-Type":"text/html;charset=UTF-8"
+                })
+            })
         }
         if (ressource == "/servir") {
             let b = await request.text();
             let la_carte = decodeURIComponent(b.split("=")[1]);
-            return new Response(carte("3", media(null), `Toucher l'icône pour ajouter votre vidéo de promotion, en paysage de préférence pour ${la_carte}`, null , []), {
+            return new Response(carte("3", media(null), `Toucher l'icône pour ajouter votre vidéo de promotion, en paysage de préférence`, null , []), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"

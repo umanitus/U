@@ -48,7 +48,7 @@ module.exports =  () => `
         opacity: 0;
     }
     .card .media img, .card .media video {
-        width:97%;
+        width:100%;
     }
     .card .description, .tags, .actions {
         padding-left:5%;

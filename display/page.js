@@ -9,23 +9,22 @@ module.exports = (meta,style,header,cards) =>
         <script src="https://unpkg.com/htmx.org@0.0.4"></script>
         <script>
             onload = () => {
-                alert("hello world");
+                //alert("hello world");
                 document.addEventListener('change', async e => {
                     if (e.target.id == 'media') {
                         let file = e.target.files[0];
-                        let upload = await fetch('/'+encodeURIComponent('#video/'), {
+                        let upload = await fetch('/'+encodeURIComponent('#image/'), {
                             method: 'POST',
                             body: file,
                             headers: new Headers({
                                 "Content-Type": file.type
                             })
                         });
-                        let video_tag = await upload.text();
-                        document.getElementById("label_image").remove();
-                        //e.target.parentNode.removeChild(e.target.parentNode.firstChild);
-                        let container = document.createElement('div');
-                        container.innerHTML = video_tag ;
-                        e.target.parentNode.appendChild(container);
+                        let carte = await upload.text();
+                        //alert(decodeURIComponent(url));
+                        e.target.parentNode.parentNode.parentNode.remove();
+                        document.getElementById("cards").innerHTML = carte ;
+                        
                     }
                 })
             }
