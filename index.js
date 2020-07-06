@@ -7,6 +7,12 @@ addEventListener('fetch', event => {
  * @param {Request} request
  */
 
+/*
+`#page/+.@(@(@/+:montrer:+.${carte}):+.+.):+.+.`
+`(@(@(@/+:vendre:+.${produit}):+.+.).+.+.)`
+`(@/+:@(/#person/+.+#msisdn/.+.+${telephone}.):+.+.))`
+*/
+
 const NOUVEAU_PRODUIT = {
     image:"",
     tags: [],
@@ -26,7 +32,7 @@ const passer = require("./display/passer.js");
 const servir = require("./display/servir.js");
 const taster = require("./display/taster.js");
 const vouloir = require("./display/vouloir.js");
-//const U = require("./U.js")(MY_KV);
+const U = require("./U.js");
 
 const hashed = async (bytes) => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);           // hash the message
@@ -34,6 +40,8 @@ const hashed = async (bytes) => {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
     return hashHex;
 }
+
+ 
 
 async function handleRequest(request) {
     let link = new URL(request.url);
@@ -47,17 +55,44 @@ async function handleRequest(request) {
     let user = key ? await MY_KV.get(key) || null : null;
     let method = request.method;
     if (method == "GET") {
-        if (ressource.indexOf(".#octet//") != -1) {
+        let subject = U.parse(ressource.substring(1));
+        
+        if (subject[1] == "#image/") {
             let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
             return new Response(product, {
                 status:200,
                 headers: new Headers({
                     "Content-Type": "image/jpg"
-                
-             })
-        })}
+                })
+            })
+        }
+        if (subject[1] == "#video/") {
+            //let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
+            return new Response(null, {
+                status:301,
+                headers: new Headers({
+                    "Location":"https://s3.eu-west-3.amazonaws.com/umanitus.com/test2.mov"
+                    //"Content-Type":"video/quicktime"
+                })
+            })
+        }
+        if (subject[1] == "#page/") {
+            /*
+            let carte = U.parse(subject[2]);
+            let but = U.parse(U.parse(carte));
+            console.log(but);
+            */
+            let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
+            return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            });
+        }
+        
         let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
-        return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : null), {
+        return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
             status: 200,
             headers: new Headers({
                 "Content-Type": "text/html;charset=UTF-8"
@@ -107,7 +142,7 @@ async function handleRequest(request) {
         if (ressource == "/servir") {
             let b = await request.text();
             let la_carte = decodeURIComponent(b.split("=")[1]);
-            return new Response(carte("3", media(null), `Toucher l'icône pour ajouter votre vidéo de promotion, en paysage de préférence`, null , []), {
+            return new Response(carte(null, media(null), `Toucher l'icône pour ajouter votre vidéo de promotion, en paysage de préférence`, null , []), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"

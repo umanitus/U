@@ -37,7 +37,6 @@ module.exports =  () => `
         margin:2%;
         opacity: 1;
         transition: opacity 1s ease-out;
-        padding-top:3%;
         box-shadow:  2px 1px 2px 1px rgba(0,0,0,0.6);
         display:flex;
         border-radius: 15px;
@@ -49,6 +48,8 @@ module.exports =  () => `
     }
     .card .media img, .card .media video {
         width:100%;
+        border-top-left-radius:15px;
+        border-top-right-radius:15px;
     }
     .card .description, .tags, .actions {
         padding-left:5%;
