@@ -5,6 +5,7 @@ module.exports = (meta,style,header,cards) =>
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="Umanitus">
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        ${meta || ''}
         <link rel="apple-touch-icon" sizes="180x180" href="https://s3.eu-west-3.amazonaws.com/umanitus.com/apple-icon.png" type="image/png">
         <script src="https://unpkg.com/htmx.org@0.0.4"></script>
         <script>
@@ -31,7 +32,6 @@ module.exports = (meta,style,header,cards) =>
         </script>
         ${style}
     </head>
-    ${meta || ''}
     <body>
         ${header || ''}
         <div id="cards">

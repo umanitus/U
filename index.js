@@ -11,6 +11,7 @@ addEventListener('fetch', event => {
 `#page/+.@(@(@/+:montrer:+.${carte}):+.+.):+.+.`
 `(@(@(@/+:vendre:+.${produit}):+.+.).+.+.)`
 `(@/+:@(/#person/+.+#msisdn/.+.+${telephone}.):+.+.))`
+#page/+.@(@(@/+:montrer:+.(/#carte/+.((+2020-07-06T14:06:46.649Z):+.+.).((/+):+:+.+.))):+.+.):+.+.
 */
 
 const NOUVEAU_PRODUIT = {
@@ -77,13 +78,24 @@ async function handleRequest(request) {
             })
         }
         if (subject[1] == "#page/") {
-            /*
-            let carte = U.parse(subject[2]);
-            let but = U.parse(U.parse(carte));
-            console.log(but);
-            */
-            let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
-            return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
+            
+            let la_carte = U.parse(U.parse(U.parse(U.parse(U.parse(subject[2])[1])[1])[1])[1])[2];
+            let sur_la_carte = U.parse(await MY_KV.get("@+jboyreau."+la_carte));
+            let carte = {} ;
+            if (sur_la_carte[0] == ".")
+                for (var i = 1;i<sur_la_carte.length;i++) {
+                    let parsed = U.parse(sur_la_carte[i]);
+                    if (parsed[2].indexOf("video") !=-1)
+                        carte["video"] = "https://jboyreau.umanitus.com/" + encodeURIComponent(parsed[2].substring(1));
+                    else if (parsed[1].indexOf("@(@(@")!=-1) {
+                        let purpose = U.parse(U.parse(U.parse(U.parse(parsed[1])[1])[1])[1]);
+                        carte["purpose"] = purpose[1];
+                        carte["product"] = purpose[2];
+                    }
+                }
+            console.log(carte);
+            //let product = ressource == "/" ? null : await MY_KV.get("@+jboyreau."+ressource);
+            return new Response(page(meta(domain == "u" ? "jboyreau" : domain, product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
