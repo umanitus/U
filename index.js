@@ -21,6 +21,7 @@ const NOUVEAU_PRODUIT = {
 }
 
 const page = require("./display/page.js");
+const login = require("./display/login.js");
 const meta = require("./display/meta.js");
 const style = require("./display/style.js");
 const header = require("./display/header.js");
@@ -42,20 +43,45 @@ const hashed = async (bytes) => {
     return hashHex;
 }
 
- 
-
 async function handleRequest(request) {
     let link = new URL(request.url);
     let domain = link.hostname.split(".")[0];
-    let owner = {};
-    owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
-    owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
-    owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
+    
     let ressource = decodeURIComponent(link.pathname);
-    let key = link.searchParams.get("key");
-    let user = key ? await MY_KV.get(key) || null : null;
+    let cookie = request.headers.get('cookie');
+    //console.log(cookie);
+    let user = cookie ? await MY_KV.get(cookie.split(";")[0].split("=")[1]) : null ;
+    //console.log(user);
     let method = request.method;
     if (method == "GET") {
+        
+        if (ressource == '/') {
+            if (!user)
+                return new Response(null, {
+                    status: 301,
+                    headers: new Headers({
+                        "Location":"/login"
+                    })
+                })
+        }
+        
+        let owner = {};
+        owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
+        owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
+        owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
+        
+        if (ressource.indexOf("/login") == 0) {
+            let msisdn_param = link.searchParams.get("msisdn");
+            let msisdn_path = ressource.split("/")[2];
+            if (msisdn_param || !msisdn_path)
+                return new Response(page(null,style(),header(owner),carte(null,null,null,null,[login(msisdn_param ? decodeURIComponent(msisdn_param) : null)])), {
+                    status:200,
+                    headers: new Headers({
+                        "Content-Type":"text/html;charset=UTF-8"
+                    })
+                })
+        }
+        
         let subject = U.parse(ressource.substring(1));
         
         if (subject[1] == "#image/") {
