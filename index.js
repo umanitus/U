@@ -2,6 +2,9 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
+
+
+
 /**
  * Respond to the request
  * @param {Request} request

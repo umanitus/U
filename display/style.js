@@ -3,6 +3,7 @@ module.exports =  () => `
     body {
       font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
       margin:0;
+      background-color:#F4F4F4;
     }
     nav {
       display:flex;
@@ -14,6 +15,7 @@ module.exports =  () => `
       background-color:black;
       color:white;
       align-items:center;
+      box-shadow: 0px 15px 10px -15px #111;
     }
     nav img {
       height:100%;
@@ -23,8 +25,8 @@ module.exports =  () => `
       text-align:center;
     }
     nav button {
-      height:80%;
       margin-right:2%;
+      height:80%;
       font-size:120%;
       border:none;
       border-radius:30%;
@@ -34,6 +36,7 @@ module.exports =  () => `
       margin-top:17%;
     }
     .card {
+        background-color:white;
         margin:2%;
         opacity: 1;
         transition: opacity 1s ease-out;
