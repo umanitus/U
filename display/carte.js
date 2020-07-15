@@ -33,19 +33,19 @@ const valider = `
         OK
     </div>
 `
-module.exports = (id, media, title, tags, actions) => `
+module.exports = ({media, titre, tags, actions, owner}) => `
   <article class="card">
     <section class="media">
         ${media || ''}
     </section>
     <section class="description">
-        <h1>${title || ''}</h1>
+        <h1>${titre || ''}</h1>
     </section>
     <section class="tags" style="display:flex;flex-wrap: wrap;margin-bottom:3%;">
          ${tags ? tags.reduce((acc,t) => acc + tag(t),"") : ''}
-         ${tags ? input()+valider :''}
+         <!-- ${owner ? input()+valider :''} -->
     </section>
     <section class="actions">
-        ${actions.reduce((acc,a) => acc + a,"")}
+        ${actions ? actions.reduce((acc,a) => acc + a,"") :''}
     </section>
   </article>`

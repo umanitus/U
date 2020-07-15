@@ -1,5 +1,5 @@
 const video = url => `
-    video poster="https://s3.eu-west-3.amazonaws.com/umanitus.com/me.jpg" controls playsinline style="width:100%" src="${url}">
+    <video poster="https://s3.eu-west-3.amazonaws.com/umanitus.com/me.jpg" controls playsinline style="width:100%" src="${url}">
     </video>
 `
 const form = () => `

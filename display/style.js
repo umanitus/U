@@ -38,16 +38,11 @@ module.exports =  () => `
     .card {
         background-color:white;
         margin:2%;
-        opacity: 1;
-        transition: opacity 1s ease-out;
         box-shadow:  2px 1px 2px 1px rgba(0,0,0,0.6);
         display:flex;
         border-radius: 15px;
         flex-direction: column;
         border:1px solid #e2e8f0;
-    }
-    .card.htmx-settling {
-        opacity: 0;
     }
     .card .media img, .card .media video {
         width:100%;
@@ -77,23 +72,16 @@ module.exports =  () => `
         display:flex;
         flex-direction:column;
     }
-    .valoriser .edition {
-        display:flex;
-    }
     .valoriser .monnaie {
         font-style: italic;
     }
     .valoriser input {
         flex:1;
-        font-size:150%;
-        width:40%;
+        font-size:120%;
+        padding: 3%;
     }
     .valoriser button {
-        flex:1;
-        font-size:150%;
-        width:40%;
-        background-color:green;
-        margin-left:5%;
+        background-color:blue;
     }
     .actions button {
         width:100%;

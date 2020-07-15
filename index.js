@@ -3,7 +3,7 @@ addEventListener('fetch', event => {
 })
 
 
-
+///  /#video/+.((+.@+www.).+.(https://s3.eu-west-3.amazonaws.com/umanitus.com/test2.mov))
 
 /**
  * Respond to the request
@@ -14,7 +14,10 @@ addEventListener('fetch', event => {
 `#page/+.@(@(@/+:montrer:+.${carte}):+.+.):+.+.`
 `(@(@(@/+:vendre:+.${produit}):+.+.).+.+.)`
 `(@/+:@(/#person/+.+#msisdn/.+.+${telephone}.):+.+.))`
-#page/+.@(@(@/+:montrer:+.(/#carte/+.((+2020-07-06T14:06:46.649Z):+.+.).((/+):+:+.+.))):+.+.):+.+.
+#page/+.@(@(@(/+):montrer:+.(/#carte/+.((+2020-07-06T14:06:46.649Z):+.+.).((/+):+:+.+.))):+.+.):+.+.
+
+#page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.
+
 */
 
 const NOUVEAU_PRODUIT = {
@@ -37,6 +40,8 @@ const passer = require("./display/passer.js");
 const servir = require("./display/servir.js");
 const taster = require("./display/taster.js");
 const vouloir = require("./display/vouloir.js");
+const acheter = require("./display/acheter.js");
+const procurer = require("./display/procurer.js");
 const U = require("./U.js");
 
 const hashed = async (bytes) => {
@@ -48,8 +53,12 @@ const hashed = async (bytes) => {
 
 async function handleRequest(request) {
     let link = new URL(request.url);
-    let domain = link.hostname.split(".")[0];
+    let domain = link.hostname.split(".umanitus.com")[0];
+    
     let ressource = decodeURIComponent(link.pathname);
+    let method = request.method;
+    
+    //Getting the user 
     let cookie_string = request.headers.get('cookie');
     let cookies = cookie_string ? cookie_string.split(";") : [] ;
     let token = null ;
@@ -61,15 +70,14 @@ async function handleRequest(request) {
         }
     }
     let user = token ? await MY_KV.get(token) : null ;
-    let method = request.method;
+    
     if (method == "GET") {
         
-        if (ressource == '/') {
-             
+        if (ressource == '/' && !user) {
                 return new Response(null, {
                     status: 301,
                     headers: new Headers({
-                        "Location":"/logo/"+ (user || "no_match!")
+                        "Location":"/login"
                     })
                 })
         }
@@ -88,34 +96,19 @@ async function handleRequest(request) {
             let msisdn_path = ressource.split("/")[2];
             
             if (msisdn_param || !msisdn_path)
-                return new Response(page(null,style(),header(owner),carte(null,null,null,null,[login(msisdn_param ? msisdn_param : null)])), {
+                return new Response(page(null,style(),header(owner),carte({media:null,titre:null,tags:null,actions:[login(msisdn_param ? msisdn_param : null)]})), {
                     status:200,
                     headers: new Headers({
                         "Content-Type":"text/html;charset=UTF-8"
                     })
                 })
             else {
-                /*
-                return new Response(msisdn_path, {
-                        status:200,
-                        headers: new Headers({
-                            "content-type":"text/plain"
-                        })
-                })
-                */
-                
                 if (msisdn_path) {
                     msisdn_path = '+'+decodeURI(msisdn_path);
                     let password = link.searchParams.get("password");
                     let secret_input = password ? await hashed(new TextEncoder().encode(SALT+password)) : null ;
                     let secret_stored = secret_input ? await MY_KV.get(`@+umanitus./#secret/+.(/#personne/+.(+#msisdn/.+.${msisdn_path}.)):+.+.`) : null ;
-
-                    /*
-                    console.log("the input is "+secret_input);
-                    console.log("the store is "+secret_stored);
-                    */
                     
-
                     if (secret_stored && (secret_input == secret_stored) ) {
                         let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.com.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.`)
                         let token = await(hashed(crypto.getRandomValues(new Uint8Array(40))));
@@ -131,7 +124,7 @@ async function handleRequest(request) {
                     return new Response(null, {
                         status:301,
                         headers: new Headers({
-                            "Location":"/no_match_for"+msisdn_path
+                            "Location":"/login"
                         })
                     })
                 }
@@ -156,55 +149,53 @@ async function handleRequest(request) {
             })
         }
         if (subject[1] == "#video/") {
-            //let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
-            return new Response(null, {
-                status:301,
-                headers: new Headers({
-                    "Location":"https://s3.eu-west-3.amazonaws.com/umanitus.com/test2.mov"
-                    //"Content-Type":"video/quicktime"
+            let video = U.parse(subject[2]);
+            let url = video[1] == "(+.@+www.)." ? video[2] : null ;
+            if (url)
+                return new Response(null, {
+                    status:301,
+                    headers: new Headers({
+                        "Location": url
+                        //"Content-Type":"video/quicktime"
+                    })
                 })
-            })
+            else
+                return new Response(null, {
+                    status:404
+                })
         }
         if (subject[1] == "#page/") {
-            
-            let la_carte = U.parse(U.parse(U.parse(U.parse(U.parse(subject[2])[1])[1])[1])[1])[2];
-            let sur_la_carte = U.parse(await MY_KV.get("@+jboyreau."+la_carte));
-            let carte = {} ;
+            let cle_carte = U.parse(U.parse(U.parse(U.parse(U.parse(subject[2])[1])[1])[1])[1])[2];
+            let sur_la_carte = U.parse(await MY_KV.get("@+"+domain+"."+cle_carte));
+            let la_carte = {} ;
             if (sur_la_carte[0] == ".")
                 for (var i = 1;i<sur_la_carte.length;i++) {
                     let parsed = U.parse(sur_la_carte[i]);
                     if (parsed[2].indexOf("video") !=-1)
-                        carte["video"] = "https://jboyreau.umanitus.com/" + encodeURIComponent(parsed[2].substring(1));
+                        la_carte["media"] = media({video:"https://jboyreau.umanitus.com/" + encodeURIComponent(parsed[2].substring(1))});
                     else if (parsed[1].indexOf("@(@(@")!=-1) {
                         let purpose = U.parse(U.parse(U.parse(U.parse(parsed[1])[1])[1])[1]);
-                        carte["purpose"] = purpose[1];
-                        carte["product"] = purpose[2];
+                        la_carte["titre"] = purpose[1] == "@(/+):vendre:" ? "Vente" : "Achat"
+                        la_carte["tags"] = [purpose[2]];
+                        la_carte["actions"] = [ jouer(encodeURIComponent(cle_carte), la_carte["titre"]), passer(encodeURIComponent(cle_carte)) ]
                     }
                 }
-            console.log(carte);
-            //let product = ressource == "/" ? null : await MY_KV.get("@+jboyreau."+ressource);
-            return new Response(page(meta(domain == "u" ? "jboyreau" : domain, product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
+            //la_carte["owner"] = domain == user ;
+            console.log(la_carte);
+            return new Response(page(meta(link.hostname, {id:encodeURIComponent(ressource.substring(1)), description:la_carte["titre"], image: owner.image, but:la_carte["titre"] }), style(), header(owner), carte(la_carte)), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
                 })
             });
         }
-        
-        let product = ressource == "/" ? null : await MY_KV.get("@+"+domain+"."+ressource);
-        return new Response(page(meta(link.hostname,product), style(), header(owner), product ? carte(null,media(product), product.description, product.tags,[jouer(product.id),passer(product.id)]) : carte(null, media(null), null, null, [])), {
-            status: 200,
-            headers: new Headers({
-                "Content-Type": "text/html;charset=UTF-8"
-            })
-        });
     }
     else if (method == "POST") {
         if (ressource == "/#carte/") {
             let id = `/#carte/+.(+${new Date().toISOString()}:+.+.).(/+:+:+.+.)`;
             //let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
             let encoded = encodeURIComponent(id);
-            return new Response(carte(encoded,null, null, null, [servir(id),taster(id),vouloir(id)]), {
+            return new Response(carte(null, null, null, [servir(id),taster(id),vouloir(id)]), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
@@ -250,6 +241,9 @@ async function handleRequest(request) {
             });
         }
         if (ressource == "/jouer") {
+            let b = await request.text();
+            let la_carte = decodeURIComponent(b.split("=")[1]);
+            
             return new Response(valoriser("achat"), {
                 status: 200,
                 headers: new Headers({
@@ -257,8 +251,20 @@ async function handleRequest(request) {
                 })
             })
         }
-        if (ressource == "/procurer") {
-            return new Response(partager(`https://${owner.domain}${ressource.substring(9)}`), {
+        if (ressource =="/acheter") {
+            let b = await request.text();
+            let la_carte = b.split("=")[1];
+            return new Response(acheter(la_carte)+procurer(la_carte), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            })
+        }
+        if (ressource =="/obtenir") {
+            let b = await request.text();
+            let la_carte = b.split("=")[1];
+            return new Response(valoriser(la_carte), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
@@ -269,6 +275,16 @@ async function handleRequest(request) {
             let b = await request.text();
             let points = parseInt(b.split("=")[1]);
             return new Response(valoriser("achat", points , points/100), {
+                status: 200,
+                headers: new Headers({
+                    "Content-Type": "text/html;charset=UTF-8"
+                })
+            })
+        }
+        if (ressource == "/procurer") {
+            let b = await request.text();
+            let la_carte = decodeURIComponent(b.split("=")[1]);
+            return new Response(partager(`https://${domain}/#page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.`), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
