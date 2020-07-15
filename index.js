@@ -49,21 +49,27 @@ const hashed = async (bytes) => {
 async function handleRequest(request) {
     let link = new URL(request.url);
     let domain = link.hostname.split(".")[0];
-    
     let ressource = decodeURIComponent(link.pathname);
-    let cookie = request.headers.get('cookie');
-    //console.log(cookie);
-    let user = cookie ? await MY_KV.get(cookie.split(";")[0].split("=")[1]) : null ;
-    //console.log(user);
+    let cookie_string = request.headers.get('cookie');
+    let cookies = cookie_string ? cookie_string.split(";") : [] ;
+    let token = null ;
+    for (let i = 0;i<cookies.length;i++) {
+        let kv = cookies[i].split("=");
+        if (kv[0] == "token") {
+            token = kv[1];
+            break;
+        }
+    }
+    let user = token ? await MY_KV.get(token) : null ;
     let method = request.method;
     if (method == "GET") {
         
         if (ressource == '/') {
-            if (!user)
+             
                 return new Response(null, {
                     status: 301,
                     headers: new Headers({
-                        "Location":"/login"
+                        "Location":"/logo/"+ (user || "no_match!")
                     })
                 })
         }
@@ -75,14 +81,67 @@ async function handleRequest(request) {
         
         if (ressource.indexOf("/login") == 0) {
             let msisdn_param = link.searchParams.get("msisdn");
+            if (msisdn_param) {
+                msisdn_param = decodeURIComponent(msisdn_param);
+                msisdn_param = msisdn_param.split("+").join('');
+            }
             let msisdn_path = ressource.split("/")[2];
+            
             if (msisdn_param || !msisdn_path)
-                return new Response(page(null,style(),header(owner),carte(null,null,null,null,[login(msisdn_param ? decodeURIComponent(msisdn_param) : null)])), {
+                return new Response(page(null,style(),header(owner),carte(null,null,null,null,[login(msisdn_param ? msisdn_param : null)])), {
                     status:200,
                     headers: new Headers({
                         "Content-Type":"text/html;charset=UTF-8"
                     })
                 })
+            else {
+                /*
+                return new Response(msisdn_path, {
+                        status:200,
+                        headers: new Headers({
+                            "content-type":"text/plain"
+                        })
+                })
+                */
+                
+                if (msisdn_path) {
+                    msisdn_path = '+'+decodeURI(msisdn_path);
+                    let password = link.searchParams.get("password");
+                    let secret_input = password ? await hashed(new TextEncoder().encode(SALT+password)) : null ;
+                    let secret_stored = secret_input ? await MY_KV.get(`@+umanitus./#secret/+.(/#personne/+.(+#msisdn/.+.${msisdn_path}.)):+.+.`) : null ;
+
+                    /*
+                    console.log("the input is "+secret_input);
+                    console.log("the store is "+secret_stored);
+                    */
+                    
+
+                    if (secret_stored && (secret_input == secret_stored) ) {
+                        let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.com.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.`)
+                        let token = await(hashed(crypto.getRandomValues(new Uint8Array(40))));
+                        let store = await MY_KV.put(token,domain,{expirationTtl: 300 });
+                        return new Response(null, {
+                            status:301,
+                            headers: new Headers({
+                                "Location":`https://${domain.substring(1)}.umanitus.com/`,
+                                "Set-Cookie":`token=${token};Path=/`
+                            })
+                        })
+                    }
+                    return new Response(null, {
+                        status:301,
+                        headers: new Headers({
+                            "Location":"/no_match_for"+msisdn_path
+                        })
+                    })
+                }
+                return new Response(null, {
+                    status:301,
+                    headers: new Headers({
+                        "Location":"/login"
+                    })
+                })
+            }
         }
         
         let subject = U.parse(ressource.substring(1));
