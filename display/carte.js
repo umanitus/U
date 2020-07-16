@@ -39,7 +39,7 @@ module.exports = ({media, titre, tags, actions, owner}) => `
         ${media || ''}
     </section>
     <section class="description">
-        <h1>${titre || ''}</h1>
+        <h1>${titre ? titre + ' à plus de 1090 Jetons Umanitus (soit 10,90€)': ''}</h1>
     </section>
     <section class="tags" style="display:flex;flex-wrap: wrap;margin-bottom:3%;">
          ${tags ? tags.reduce((acc,t) => acc + tag(t),"") : ''}

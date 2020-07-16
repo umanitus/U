@@ -42,6 +42,7 @@ const taster = require("./display/taster.js");
 const vouloir = require("./display/vouloir.js");
 const acheter = require("./display/acheter.js");
 const procurer = require("./display/procurer.js");
+const contacter = require("./display/contacter.js");
 const U = require("./U.js");
 
 const hashed = async (bytes) => {
@@ -100,6 +101,14 @@ async function handleRequest(request) {
                         "Content-Type":"text/html;charset=UTF-8"
                     })
                 })
+        }
+        if (ressource == "/contact") {
+            return new Response(page(null, style(), header(owner), carte({media:null,titre:null,tags:null,actions:[contacter({tel:null,nom:null,domaine:null})]})), {
+                status:200,
+                headers: new Headers({
+                    "Content-Type":"text/html;charset=UTF-8"
+                })
+            })
         }
         if (ressource.indexOf("/login") == 0) {
             let msisdn_param = link.searchParams.get("msisdn");
@@ -210,7 +219,7 @@ async function handleRequest(request) {
             let id = `/#carte/+.(+${new Date().toISOString()}:+.+.).(/+:+:+.+.)`;
             //let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
             let encoded = encodeURIComponent(id);
-            return new Response(carte(null, null, null, [servir(id),taster(id),vouloir(id)]), {
+            return new Response(carte({media:null, titre: null, tags:null, actions: [contacter({nom:null,tel:null,domaine:null})]}), {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
@@ -299,7 +308,7 @@ async function handleRequest(request) {
         if (ressource == "/procurer") {
             let b = await request.text();
             let la_carte = decodeURIComponent(b.split("=")[1]);
-            return new Response(partager(`https://${domain}/#page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.`), {
+            return new Response(contacter({tel:null,nom:null,domaine:null}) /*partager(`https://${domain}/#page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.`)*/, {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"
