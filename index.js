@@ -58,7 +58,7 @@ async function handleRequest(request) {
     let ressource = decodeURIComponent(link.pathname);
     let method = request.method;
     
-    //Getting the user 
+    //Getting the user
     let cookie_string = request.headers.get('cookie');
     let cookies = cookie_string ? cookie_string.split(";") : [] ;
     let token = null ;
@@ -71,22 +71,36 @@ async function handleRequest(request) {
     }
     let user = token ? await MY_KV.get(token) : null ;
     
+    if (user && user != domain)
+        return new Response(null, {
+            status:301,
+            headers: new Headers({
+                "Location":`https://${user}.umanitus.com/`,
+            })
+        })
+    
     if (method == "GET") {
-        
-        if (ressource == '/' && !user) {
-                return new Response(null, {
-                    status: 301,
-                    headers: new Headers({
-                        "Location":"/login"
-                    })
-                })
-        }
-        
         let owner = {};
         owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
         owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
         owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
-        
+        if (ressource == '/') {
+            if (!user)
+                return new Response(null, {
+                    status: 301,
+                    headers: new Headers({
+                        "Location":"/login",
+                        "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
+                    })
+                })
+            else 
+                return new Response(page(null,style(),header(owner,true),null), {
+                    status:200,
+                    headers: new Headers({
+                        "Content-Type":"text/html;charset=UTF-8"
+                    })
+                })
+        }
         if (ressource.indexOf("/login") == 0) {
             let msisdn_param = link.searchParams.get("msisdn");
             if (msisdn_param) {
@@ -99,7 +113,8 @@ async function handleRequest(request) {
                 return new Response(page(null,style(),header(owner),carte({media:null,titre:null,tags:null,actions:[login(msisdn_param ? msisdn_param : null)]})), {
                     status:200,
                     headers: new Headers({
-                        "Content-Type":"text/html;charset=UTF-8"
+                        "Content-Type":"text/html;charset=UTF-8",
+                        "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
                     })
                 })
             else {
@@ -116,8 +131,8 @@ async function handleRequest(request) {
                         return new Response(null, {
                             status:301,
                             headers: new Headers({
-                                "Location":`https://${domain.substring(1)}.umanitus.com/`,
-                                "Set-Cookie":`token=${token};Path=/`
+                                "Location":`https://${domain}.umanitus.com/`,
+                                "Set-Cookie":`token=${token};Path=/;domain=umanitus.com`
                             })
                         })
                     }
