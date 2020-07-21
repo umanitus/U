@@ -55,6 +55,7 @@ const hashed = async (bytes) => {
 async function handleRequest(request) {
     let link = new URL(request.url);
     
+    //HANDLING LOGIN WITH MSISDN AND PASSWORD
     
     if (link.pathname.indexOf("/login") == 0) {
         let msisdn_param = link.searchParams.get("msisdn");
@@ -85,8 +86,8 @@ async function handleRequest(request) {
                     return new Response(null, {
                         status:301,
                         headers: new Headers({
-                            "Location":`https://${link.hostname}/@${encodeURI(domain)}/`,
-                            "Set-Cookie":`token=${token};Path=/;domain=${link.hostname}`
+                            "Location":`${domain}/`,
+                            "Set-Cookie":`token=${token};Path=/;domain=umanitus.com`
                         })
                     })
                 }
@@ -100,26 +101,10 @@ async function handleRequest(request) {
             }
         }
     
-    
-    /*
-    let domain = link.hostname.split(".umanitus.com")[0];
-    */
-    let in_memory = link.pathname.split('/')[1];
-    let domain = in_memory.indexOf("@") == 0 ? decodeURI(in_memory.substring(1,in_memory.length-1)) : null ;
-    //console.log(domain);
-    /*
-    let ressource = decodeURIComponent(link.pathname);
-    */
-
-    let ressource = '/'+ ( link.pathname.split('/')[2] || '');
-    //console.log(ressource);
-    let method = request.method;
-    
-    //Getting the user
+    //Getting the domain
     let cookie_string = request.headers.get('cookie');
     let cookies = cookie_string ? cookie_string.split(";") : [] ;
     let token = null ;
-    console.log(cookies);
     for (let i = 0;i<cookies.length;i++) {
         let kv = cookies[i].split("=");
         if (kv[0].trim() == "token") {
@@ -127,39 +112,52 @@ async function handleRequest(request) {
             break;
         }
     }
-    console.log(token);
     let user = token ? await MY_KV.get(token) : null ;
-    
-    if (user && user != domain)
+
+    if (user && request.url.indexOf(user)!=0)
         return new Response(null, {
             status:301,
             headers: new Headers({
-                "Location":`https://${user}.umanitus.com/`,
+                "Location":`${user}/`,
             })
         })
     
-    if (method == "GET") {
-        let owner = {};
-        owner.image = await MY_KV.get(`@+${domain}./#image/.(+.@+.+./+.).@+www.`);
-        owner.pieces = await MY_KV.get(`@+${domain}.//+#piece//.#//+.@+umanitus.`);
-        owner.niveau = await MY_KV.get(`@+${domain}./#niveau/+.(@+.+./+.).@+umanitus.`);
-        if (ressource == '/') {
-            if (!user)
-                return new Response(null, {
-                    status: 301,
-                    headers: new Headers({
-                        "Location":"/login",
-                        "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
-                    })
+    if (!user) {
+        let token = link.searchParams.get('invitation');
+        if (!token)
+            return new Response(page(null,style(),header(),carte({media:null, titre: 'Pour rejoindre Umanitus, vous devez y être invité par un membre que vous connaissez', tags:null, actions:null})), {
+                status:200,
+                headers: new Headers({
+                    "Content-Type":`text/html;charset=UTF-8`,
                 })
-            else 
-                return new Response(page(null,style(),header(owner,true),null), {
-                    status:200,
-                    headers: new Headers({
-                        "Content-Type":"text/html;charset=UTF-8"
-                    })
+            })
+        else {
+            return new Response(null, {
+                status:301,
+                headers: new Headers({
+                    "Location":`https://umanitus.com/login`,
+                    "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
                 })
+            })
         }
+    }
+    
+    if (request.method == "GET") {
+        let owner = {};
+        owner.image = await MY_KV.get(`${user}/#image/.(+.@+.+./+.).@+www.`);
+        owner.pieces = await MY_KV.get(`${user}//+#jeton//.#//+.@+umanitus.`);
+        owner.niveau = await MY_KV.get(`${user}/#niveau/+.(@+.+./+.).@+umanitus.`);
+        console.log(owner);
+        let ressource = request.url.substring(decodeURIComponent(request.url.indexOf(user)+user.length));
+        console.log(ressource);
+        if (ressource == '/')
+            return new Response(page(null,style(),header(owner,true),null), {
+                status:200,
+                headers: new Headers({
+                    "Content-Type":"text/html;charset=UTF-8"
+                })
+            })
+            
         let subject = U.parse(ressource.substring(1));
         
         if (subject[1] == "#image/") {

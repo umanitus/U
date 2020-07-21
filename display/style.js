@@ -38,7 +38,7 @@ module.exports =  () => `
     .card {
         background-color:white;
         margin:2%;
-        box-shadow:  2px 1px 2px 1px rgba(0,0,0,0.6);
+        box-shadow:  2px 1px 2px 1px #A9A9A9;
         display:flex;
         border-radius: 15px;
         flex-direction: column;
