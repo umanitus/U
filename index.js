@@ -68,8 +68,7 @@ async function handleRequest(request) {
             return new Response(page(null,style(),header(null),carte({media:null,titre:null,tags:null,actions:[login(msisdn_param ? msisdn_param : null)]})), {
                 status:200,
                 headers: new Headers({
-                    "Content-Type":"text/html;charset=UTF-8",
-                    "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
+                    "Content-Type":"text/html;charset=UTF-8"
                 })
             })
         else {
@@ -78,16 +77,16 @@ async function handleRequest(request) {
                 let password = link.searchParams.get("password");
                 let secret_input = password ? await hashed(new TextEncoder().encode(SALT+password)) : null ;
                 let secret_stored = secret_input ? await MY_KV.get(`@+umanitus./#secret/+.(/#personne/+.(+#msisdn/.+.${msisdn_path}.)):+.+.`) : null ;
-                    
                 if (secret_stored && (secret_input == secret_stored) ) {
-                    let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.com.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.`)
+                    let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.`)
                     let token = await(hashed(crypto.getRandomValues(new Uint8Array(40))));
-                    let store = await MY_KV.put(token,domain,{expirationTtl: 300 });
+                    let store = await MY_KV.put(token,domain,{expirationTtl: 60 });
                     return new Response(null, {
                         status:301,
                         headers: new Headers({
+                            "Cache-Control":'no-cache',
                             "Location":`${domain}/`,
-                            "Set-Cookie":`token=${token};Path=/;domain=umanitus.com`
+                            "Set-Cookie":`token=${token};Secure;SameSite=Strict;Max-Age=50;Path=/;Domain=umanitus.com`
                         })
                     })
                 }
@@ -103,6 +102,15 @@ async function handleRequest(request) {
     
     //Getting the domain
     let cookie_string = request.headers.get('cookie');
+    /*
+    return new Response(cookie_string , {
+        status:200,
+        headers: new Headers({
+            "Content-Type":'text/plain'
+        })
+    })
+    */
+
     let cookies = cookie_string ? cookie_string.split(";") : [] ;
     let token = null ;
     for (let i = 0;i<cookies.length;i++) {
@@ -113,6 +121,8 @@ async function handleRequest(request) {
         }
     }
     let user = token ? await MY_KV.get(token) : null ;
+
+    
 
     if (user && request.url.indexOf(user)!=0)
         return new Response(null, {
@@ -135,8 +145,7 @@ async function handleRequest(request) {
             return new Response(null, {
                 status:301,
                 headers: new Headers({
-                    "Location":`https://umanitus.com/login`,
-                    "Set-Cookie":"token=5; Path=/; domain=umanitus.com ; Expires=Fri, 5 Oct 2018 14:28:00 GMT"
+                    "Location":`https://umanitus.com/login`
                 })
             })
         }
@@ -147,6 +156,7 @@ async function handleRequest(request) {
         owner.image = await MY_KV.get(`${user}/#image/.(+.@+.+./+.).@+www.`);
         owner.pieces = await MY_KV.get(`${user}//+#jeton//.#//+.@+umanitus.`);
         owner.niveau = await MY_KV.get(`${user}/#niveau/+.(@+.+./+.).@+umanitus.`);
+        //owner.niveau = parseInt(owner.niveau);
         console.log(owner);
         let ressource = request.url.substring(decodeURIComponent(request.url.indexOf(user)+user.length));
         console.log(ressource);
