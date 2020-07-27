@@ -16,6 +16,8 @@ addEventListener('fetch', event => {
 `(@/+:@(/#person/+.+#msisdn/.+.+${telephone}.):+.+.))`
 #page/+.@(@(@(/+):montrer:+.(/#carte/+.((+2020-07-06T14:06:46.649Z):+.+.).((/+):+:+.+.))):+.+.):+.+.
 
+`${domain}
+
 #page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.
 
 */
@@ -43,6 +45,7 @@ const vouloir = require("./display/vouloir.js");
 const acheter = require("./display/acheter.js");
 const procurer = require("./display/procurer.js");
 const contacter = require("./display/contacter.js");
+const se_connecter = require("./display/se_connecter.js");
 const U = require("./U.js");
 
 const hashed = async (bytes) => {
@@ -135,7 +138,7 @@ async function handleRequest(request) {
     if (!user) {
         let token = link.searchParams.get('invitation');
         if (!token)
-            return new Response(page(null,style(),header(),carte({media:null, titre: 'Pour rejoindre Umanitus, vous devez y être invité par un membre que vous connaissez', tags:null, actions:null})), {
+            return new Response(page(null,style(),header(),carte({media:null, titre: 'Pour rejoindre Umanitus, vous devez y être invité par un membre que vous connaissez', tags:null, actions:null})+carte({media:null, titre:'Déjà membre ?',tags:null, actions:[se_connecter()]})), {
                 status:200,
                 headers: new Headers({
                     "Content-Type":`text/html;charset=UTF-8`,
