@@ -42,7 +42,13 @@ const p = t => {
             op=op-1;
         else if (op==0) {
             var n=t.charAt(j+1);
-            if ((c=="+" || c=="-") && n=="." && t.charAt(j-1)!="_") {
+            if (c == '/' && (n == '+' || n=='-')) {
+                parsed[0] = '/'+n ;
+                parsed[1] = t.substring(0,j+1);
+                parsed[2] = t.substring(j+3);
+                break;
+            }
+            else if ((c=="+" || c=="-") && n=="." && t.charAt(j-1)!="_") {
                 if (t.charAt(j-1)=="/") {
                     var plural= (t.charAt(j-2)=="/");
                     parsed[0]=(plural ? "//" : "/")+c+".";
@@ -56,19 +62,19 @@ const p = t => {
                     break;
                 }
             }
-        else if ( c=="&" || (c=="." && t.charAt(j+1)=="(" && n!="") || c=="?" ||  (c=="_" && anU(n)) || j==(le-1) ) {
-            if (!parsed[0] && j<(le-1))
-                parsed[0]=c;
-            if (parsed[0]==c) {
-                parsed.push(decapsulated(remaining.substring(0,counting_combi)));
-                remaining=remaining.substring(counting_combi+1);
-                counting_combi=-1;
+            else if ( c=="&" || (c=="." && t.charAt(j+1)=="(" && n!="") || c=="?" ||  (c=="_" && anU(n)) || j==(le-1) ) {
+                if (!parsed[0] && j<(le-1))
+                    parsed[0]=c;
+                if (parsed[0]==c) {
+                    parsed.push(decapsulated(remaining.substring(0,counting_combi)));
+                    remaining=remaining.substring(counting_combi+1);
+                    counting_combi=-1;
+                }
             }
-        }
-        else if (c==":" && n!="" && !anU(n) && verb_start==-1)
-            verb_start=j+1;
-        else if (c=="#" && possession==-1 && j>0 && ( t.charAt(j-1)==")" || t.charAt(j-1)=="+" || t.charAt(j-1)=="/" || !anU(t.charAt(j-1))))
-            possession=j;
+            else if (c==":" && n!="" && !anU(n) && verb_start==-1)
+                verb_start=j+1;
+            else if (c=="#" && possession==-1 && j>0 && ( t.charAt(j-1)==")" || t.charAt(j-1)=="+" || t.charAt(j-1)=="/" || !anU(t.charAt(j-1))))
+                possession=j;
         }
     }
     var f=parsed[0];
@@ -119,13 +125,26 @@ const p = t => {
         return p(decapsulated(t));
 }
 //Interpreter
-module.exports = t => {
+exports.parse = p
+
+/*
+module.exports = (memory) => {
+    const f = (t, memory, domain) => {
+        return from(t, memory, domain)
+    }
+    return f
+}
+*/
+
+const from = async (memory, domain, t) => {
     t=t.replace(/\s/g,"");
     var parsed=p(t);
     //console.log(parsed)
     var f=parsed[0];
     if (f=="? ") {
-        var in_memory=memory[parsed[1]];
+        return "Hello"
+        /*
+        var in_memory=await memory.get(domain+parsed[1]);
         if (in_memory)
             return "("+in_memory+")";
         else {
@@ -133,10 +152,10 @@ module.exports = t => {
             if (q[0] == ".") {
                 q=q.slice(1);
                 var l = q.length;
-                var answer = readFromMemory(q[0])
+                var answer = await memory.get(domain+q[0])
                 var j = 1;
                 while (answer.length > 0 && j < l) {
-                    var l2 = readFromMemory(q[j]);
+                    var l2 = await memory.get(domain+q[j]);
                     var l3 = [];
                     var k=0;
                     for (var i=0; i < answer.length; ++i)
@@ -151,7 +170,7 @@ module.exports = t => {
                     return "("+answer.map(function(el) {return "("+el+")";}).join("&")+")";
             }
             else if (q[0] == "/+.") {
-                var intersection = from(q[1]+"?");
+                var intersection = await from(q[1]+"?");
                 if (intersection == "?")
                     return intersection;
                 else {
@@ -164,6 +183,7 @@ module.exports = t => {
             }
             return "?"
         }
+        */
     }
     else if (f=="+.") {
         var psub=p(parsed[1]);
@@ -269,16 +289,16 @@ module.exports = t => {
             english=fi+toe[1];
         }
         else if (fi=="#." || fi=="#/" || fi=="#//") {
-            english=(fi=="#."?"every ":fi=="#/"?"one ":"")+from("(@+english.).("+toe[1]+")")+(fi=="#//"?"s":"");
+            english=(fi=="#."?"every ":fi=="#/"?"one ":"")+await from("(@+english.).("+toe[1]+")")+(fi=="#//"?"s":"");
         }
         else if (fi=="/+." || fi=="//+.") {
-            english="the "+from("(@+english.).("+toe[1]+")");
+            english="the "+await from("(@+english.).("+toe[1]+")");
         }
         else if (fi=="+." || fi=="-.") {
             var sub=p(toe[1]);
             var obj=p(toe[2]);
-            var head=from("(@+english.).("+toe[1]+")");
-            var tail=from("(@+english.).("+toe[2]+")");
+            var head=await from("(@+english.).("+toe[1]+")");
+            var tail=await from("(@+english.).("+toe[2]+")");
             if (sub[0]=="@." || sub[0]=="@:" || sub[0]==":") {
                 var verb=sub[2];
                 var subor=p(sub[1])[0];
@@ -287,7 +307,7 @@ module.exports = t => {
                     english=head+", "+tail;
                 else if (!verb) {
                     if (sub[0]==":" && fact && p(obj[1])[0]=="@:" && !p(obj[1])[2]) {
-                        english=head+", "+from("(@+english.).("+obj[1]+")")+" , that "+from("(@+english.).("+obj[2]+")");
+                        english=head+", "+await from("(@+english.).("+obj[1]+")")+" , that "+await from("(@+english.).("+obj[2]+")");
                     }
                     else
                         english=(fact?head+", ":sub[1]=="+"?head+" is ":tail+" is ")+(fi=="+."?"":"not ")+((fact || sub[1]=="+")?tail:head);
@@ -309,17 +329,17 @@ module.exports = t => {
             var sub=p(toe[1]);
             var fact=(sub[0]=="+." || sub[0]=="-.")
             if (!verb)
-                english=(fact?(fi=="@."?"while ":fi==":"?"because ":"to that "):(fi=="@."?"at ":fi=="@:"?"to ":"from "))+(toe[1]=="+"?" which ":from("(@+english.).("+toe[1]+")"));
+                english=(fact?(fi=="@."?"while ":fi==":"?"because ":"to that "):(fi=="@."?"at ":fi=="@:"?"to ":"from "))+(toe[1]=="+"?" which ":await from("(@+english.).("+toe[1]+")"));
             else
-                english=((fact || toe[1]=="+")?"that ":from("(@+english.).("+toe[1]+")"))+" "+(fi=="@:"?("will "+verb):fi==":"?("did "+verb):("is "+verb.substring(0,verb.charAt(verb.length-1)=="e"?verb.length-1:verb.length)+"ing"));
+                english=((fact || toe[1]=="+")?"that ":await from("(@+english.).("+toe[1]+")"))+" "+(fi=="@:"?("will "+verb):fi==":"?("did "+verb):("is "+verb.substring(0,verb.charAt(verb.length-1)=="e"?verb.length-1:verb.length)+"ing"));
         }
         else if (fi=="." || fi=="&" || fi=="_" || fi=="?") {
             for (var i=1;i<toe.length-1;i++)
-                english+=((fi=="_"&&i!=1)?" then ":"")+from("(@+english.).("+toe[i]+")")+", ";
-            english=english.substring(0,english.length-2)+(fi=="?"?" or ":fi=="_"?" then ":(fi=="&" || toe.length>3)?" and ":" ")+from("(@+english.).("+toe[toe.length-1]+")");
+                english+=((fi=="_"&&i!=1)?" then ":"")+await from("(@+english.).("+toe[i]+")")+", ";
+            english=english.substring(0,english.length-2)+(fi=="?"?" or ":fi=="_"?" then ":(fi=="&" || toe.length>3)?" and ":" ")+await from("(@+english.).("+toe[toe.length-1]+")");
         }
         else if (fi=="%#") {
-            english=from("(@+english.).("+toe[2]+")")+" of "+from("(@+english.).("+toe[1]+")");
+            english=await from("(@+english.).("+toe[2]+")")+" of "+await from("(@+english.).("+toe[1]+")");
         }
         else if (fi=="@%") {
             if (toe[2]=="_") {
@@ -328,15 +348,15 @@ module.exports = t => {
                 else if (toe[4]=="-.")
                     english="most "+toe[1];
                 else if (toe[3]=="+")
-                    english="less "+toe[1]+" than "+from("(@+english.).("+toe[4]+")");
+                    english="less "+toe[1]+" than "+await from("(@+english.).("+toe[4]+")");
                 else if (toe[4]=="+.")
-                    english="more "+toe[1]+" than "+from("(@+english.).("+toe[3]+")");
+                    english="more "+toe[1]+" than "+await from("(@+english.).("+toe[3]+")");
             }
             else
-                english="as "+toe[1]+" as "+from("(@+english.).("+toe[2]+")");
+                english="as "+toe[1]+" as "+await from("(@+english.).("+toe[2]+")");
         }
         else if (fi=="? ") {
-            english=from("(@+english.).("+toe[1]+")")+" ?";
+            english=await from("(@+english.).("+toe[1]+")")+" ?";
         }
         return english;
     }
@@ -348,9 +368,10 @@ module.exports = t => {
       }
       else { 
         var plural = fi == "#/" ? "/":"";
-        return `<a href="#" class="u-link" id="${parsed[2]+plural}?">${from(`(@+english.).(${parsed[2]})`)}</a>`
+        return `<a href="#" class="u-link" id="${parsed[2]+plural}?">${await from(`(@+english.).(${parsed[2]})`)}</a>`
       }
     }
     else
         return "?";
 }
+exports.f = from

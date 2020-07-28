@@ -17,8 +17,12 @@ addEventListener('fetch', event => {
 #page/+.@(@(@(/+):montrer:+.(/#carte/+.((+2020-07-06T14:06:46.649Z):+.+.).((/+):+:+.+.))):+.+.):+.+.
 
 `${domain}
-
+https://umanitus.com/@jboyreau./((/+):inviter:+.(https://umanitus.com/@ahenry./+.)):+:+.
 #page/+.@(@(@(/+):montrer:+.(${la_carte}):+.+.):+.+.
+
+`#msisdn/+.((#personne/:inviter:+.(#personne/+.(+#+.+.+.))):+.(_)
+
+@+umanitus./#domaine/+.(@+umanitus.+.+.).((/#personne/+.(+#msisdn/.+.+33687041667.))#+.+.+.)
 
 */
 
@@ -58,6 +62,7 @@ const hashed = async (bytes) => {
 async function handleRequest(request) {
     let link = new URL(request.url);
     
+    
     //HANDLING LOGIN WITH MSISDN AND PASSWORD
     
     if (link.pathname.indexOf("/login") == 0) {
@@ -66,30 +71,37 @@ async function handleRequest(request) {
             msisdn_param = decodeURIComponent(msisdn_param);
             msisdn_param = msisdn_param.split("+").join('');
         }
+        let invitation = link.searchParams.get("invitation");
+        let invited_msisdn = invitation ? await MY_KV.get(`@+umanitus./#msisdn/+.((#personne/:inviter:+.(#personne/+.(+#+.+.+.))):+.(_${invitation}))`) : null
         let msisdn_path = link.pathname.split("/")[2];
-        if (msisdn_param || !msisdn_path)
-            return new Response(page(null,style(),header(null),carte({media:null,titre:null,tags:null,actions:[login(msisdn_param ? msisdn_param : null)]})), {
-                status:200,
-                headers: new Headers({
-                    "Content-Type":"text/html;charset=UTF-8"
+        if (msisdn_param || !msisdn_path) {
+                return new Response(page(null,style(),header(null),carte({media:null,titre:null,tags:null,actions:[login(msisdn_param ? msisdn_param : null, invitation, invited_msisdn)]})), {
+                    status:200,
+                    headers: new Headers({
+                        "Content-Type":"text/html;charset=UTF-8"
+                    })
                 })
-            })
+        }
         else {
             if (msisdn_path) {
                 msisdn_path = '+'+decodeURI(msisdn_path);
                 let password = link.searchParams.get("password");
                 let secret_input = password ? await hashed(new TextEncoder().encode(SALT+password)) : null ;
-                let secret_stored = secret_input ? await MY_KV.get(`@+umanitus./#secret/+.(/#personne/+.(+#msisdn/.+.${msisdn_path}.)):+.+.`) : null ;
-                if (secret_stored && (secret_input == secret_stored) ) {
-                    let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.`)
+                let domain = await MY_KV.get(`@+umanitus./#domaine/+.(@+umanitus.+.+.).((/#personne/+.(+#msisdn/.+.${msisdn_path}.))#+.+.+.)`)
+                let secret_stored = domain ? await MY_KV.get(`${domain}//+#secret/+.(@+umanitus.+.+.)`) : null ;
+                if ( (secret_stored && (secret_input == secret_stored) ) || (secret_input && domain && (msisdn_path == invited_msisdn ))) {
                     let token = await(hashed(crypto.getRandomValues(new Uint8Array(40))));
-                    let store = await MY_KV.put(token,domain,{expirationTtl: 60 });
+                    if (invitation) {
+                        let signup = await MY_KV.put(`${domain}//+#secret/+.(@+umanitus.+.+.)`, secret_input);
+                        let burnt = await MY_KV.delete(`@+umanitus./#msisdn/+.((#personne/:inviter:+.(#personne/+.(+#+.+.+.))):+.(_${invitation}))`);
+                    }
+                    let store = await MY_KV.put(token,domain,{expirationTtl: 3600 });
                     return new Response(null, {
                         status:301,
                         headers: new Headers({
                             "Cache-Control":'no-cache',
                             "Location":`${domain}/`,
-                            "Set-Cookie":`token=${token};Secure;SameSite=Strict;Max-Age=50;Path=/;Domain=umanitus.com`
+                            "Set-Cookie":`token=${token};Secure;SameSite=Strict;Max-Age=3590;Path=/;Domain=umanitus.com`
                         })
                     })
                 }
@@ -102,18 +114,18 @@ async function handleRequest(request) {
                 }
             }
         }
-    
     //Getting the domain
+    let d = link.hostname ;
+    let domain = null ;
+    let ressource = null ; 
+    if (d === "umanitus.com") {
+        let parts = link.pathname.split('/');
+        domain = "https://umanitus.com/"+parts[1];
+        ressource = request.url.substring(domain.length);
+    }
+    
+    //Getting the user
     let cookie_string = request.headers.get('cookie');
-    /*
-    return new Response(cookie_string , {
-        status:200,
-        headers: new Headers({
-            "Content-Type":'text/plain'
-        })
-    })
-    */
-
     let cookies = cookie_string ? cookie_string.split(";") : [] ;
     let token = null ;
     for (let i = 0;i<cookies.length;i++) {
@@ -125,9 +137,10 @@ async function handleRequest(request) {
     }
     let user = token ? await MY_KV.get(token) : null ;
 
-    
+    const test = await U.f("#person/?", MY_KV, user);
+    console.log(test);
 
-    if (user && request.url.indexOf(user)!=0)
+    if (user && (user != domain))
         return new Response(null, {
             status:301,
             headers: new Headers({
@@ -153,24 +166,25 @@ async function handleRequest(request) {
             })
         }
     }
-    
+    //let ressource = request.url.substring(decodeURIComponent(request.url.indexOf(user)+user.length));
     if (request.method == "GET") {
         let owner = {};
         owner.image = await MY_KV.get(`${user}/#image/.(+.@+.+./+.).@+www.`);
-        owner.pieces = await MY_KV.get(`${user}//+#jeton//.#//+.@+umanitus.`);
+        owner.jetons = await MY_KV.get(`${user}//+#jeton//.#//+.@+umanitus.`);
         owner.niveau = await MY_KV.get(`${user}/#niveau/+.(@+.+./+.).@+umanitus.`);
-        //owner.niveau = parseInt(owner.niveau);
+        owner.niveau = owner.niveau ? parseInt(owner.niveau) : 0 ;
+        owner.jetons = owner.jetons ? parseInt(owner.jetons) : 0 ;
         console.log(owner);
-        let ressource = request.url.substring(decodeURIComponent(request.url.indexOf(user)+user.length));
+        
         console.log(ressource);
-        if (ressource == '/')
+        if (ressource == '/') {
             return new Response(page(null,style(),header(owner,true),null), {
                 status:200,
                 headers: new Headers({
                     "Content-Type":"text/html;charset=UTF-8"
                 })
             })
-            
+        }
         let subject = U.parse(ressource.substring(1));
         
         if (subject[1] == "#image/") {

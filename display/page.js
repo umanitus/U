@@ -1,6 +1,7 @@
 module.exports = (meta,style,header,cards) => 
 `<html>
     <head>
+        <title>Umanitus</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="Umanitus">
@@ -10,6 +11,7 @@ module.exports = (meta,style,header,cards) =>
         <meta http-equiv="Expires" content="0" />
         ${meta || ''}
         <link rel="apple-touch-icon" sizes="180x180" href="https://s3.eu-west-3.amazonaws.com/umanitus.com/apple-icon.png" type="image/png">
+        <link rel="icon" href="https://s3.eu-west-3.amazonaws.com/umanitus.com/apple-icon.png">
         <script src="https://unpkg.com/htmx.org@0.0.4"></script>
         <script>
             onload = () => {
