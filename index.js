@@ -51,6 +51,7 @@ const procurer = require("./display/procurer.js");
 const contacter = require("./display/contacter.js");
 const se_connecter = require("./display/se_connecter.js");
 const U = require("./U.js");
+import { AwsClient } from 'aws4fetch';
 
 const hashed = async (bytes) => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);           // hash the message
@@ -58,6 +59,7 @@ const hashed = async (bytes) => {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
     return hashHex;
 }
+
 
 async function handleRequest(request) {
     let link = new URL(request.url);
@@ -136,10 +138,6 @@ async function handleRequest(request) {
         }
     }
     let user = token ? await MY_KV.get(token) : null ;
-
-    const test = await U.f("#person/?", MY_KV, user);
-    console.log(test);
-
     if (user && (user != domain))
         return new Response(null, {
             status:301,
@@ -147,27 +145,18 @@ async function handleRequest(request) {
                 "Location":`${user}/`,
             })
         })
-    
-    if (!user) {
-        let token = link.searchParams.get('invitation');
-        if (!token)
-            return new Response(page(null,style(),header(),carte({media:null, titre: 'Pour rejoindre Umanitus, vous devez y être invité par un membre que vous connaissez', tags:null, actions:null})+carte({media:null, titre:'Déjà membre ?',tags:null, actions:[se_connecter()]})), {
-                status:200,
-                headers: new Headers({
-                    "Content-Type":`text/html;charset=UTF-8`,
-                })
-            })
-        else {
-            return new Response(null, {
-                status:301,
-                headers: new Headers({
-                    "Location":`https://umanitus.com/login`
-                })
-            })
-        }
-    }
-    //let ressource = request.url.substring(decodeURIComponent(request.url.indexOf(user)+user.length));
     if (request.method == "GET") {
+        if (!user) {
+            let token = link.searchParams.get('invitation');
+            token = token ? await MY_KV.get(token) : null ;
+            if (!token)
+                return new Response(page(null,style(),header(),carte({media:null, titre: 'Pour rejoindre Umanitus, vous devez y être invité par un membre que vous connaissez', tags:null, actions:null})+carte({media:null, titre:'Déjà membre ?',tags:null, actions:[se_connecter()]})), {
+                    status:200,
+                    headers: new Headers({
+                        "Content-Type":`text/html;charset=UTF-8`,
+                    })
+                })
+        }
         let owner = {};
         owner.image = await MY_KV.get(`${user}/#image/.(+.@+.+./+.).@+www.`);
         owner.jetons = await MY_KV.get(`${user}//+#jeton//.#//+.@+umanitus.`);
@@ -238,8 +227,31 @@ async function handleRequest(request) {
             });
         }
     }
-    else if (method == "POST") {
-        if (ressource == "/#carte/") {
+    else if (request.method == "POST") {
+        const { headers } = request ;
+        const contentTypeString = headers.get("content-type");
+        const contentType = contentTypeString.split("/")[0];
+        if (user && (contentType == "image" || contentType == "audio" || contentType == "video" || contentType == "text")) {
+            
+            let myBlob = await request.arrayBuffer();
+            let h = await hashed(myBlob);
+            let path = `#${contentType}/+.(+.@+sha256..@+base64.+._${h}.).(@+www.)`
+            const aws = new AwsClient({ accessKeyId: AWS_S3_ACCESS_KEY, secretAccessKey: AWS_S3_SECRET_KEY });
+            const url = 'https://s3.eu-west-3.amazonaws.com/umanitus.com/'+h;
+            console.log("to upload new file");
+            const res = await aws.fetch(url, { method:"PUT", body: myBlob, headers: new Headers({
+                "x-amz-acl": "public-read",
+                "content-type":contentTypeString
+            })});
+            console.log("uploaded")
+            return new Response(JSON.stringify(res) , {
+                status:200,
+                headers: new Headers({
+                    "Content-Type": "text/plain"
+                })
+            })
+        }
+        if (ressource == "/@(/+):+:") {
             let id = `/#carte/+.(+${new Date().toISOString()}:+.+.).(/+:+:+.+.)`;
             //let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
             let encoded = encodeURIComponent(id);
