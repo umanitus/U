@@ -33,6 +33,8 @@ const valider = `
         OK
     </div>
 `
+
+
 module.exports = ({media, titre, tags, actions, owner}) => `
   <article class="card">
     <section class="media">

@@ -226,13 +226,22 @@ async function handleRequest(request) {
                 })
             });
         }
+        if (subject[1] == "#carte/") {
+            /*
+            let c = '/'+ressource ;
+            let la_carte = {
+                video: await MY_KV.get(`${domain}/#video/+.(@(${c}).+.+.).(@+www.)`),
+                but: await MY_KV.get(`${domain}/#:%/+.@(#(@(@+.+.(${c}).((/+):+:+.+.)).):+.+.)/+.).+.+.`)
+            };
+            */
+            
+        }
     }
     else if (request.method == "POST") {
         const { headers } = request ;
         const contentTypeString = headers.get("content-type");
         const contentType = contentTypeString.split("/")[0];
         if (user && (contentType == "image" || contentType == "audio" || contentType == "video" || contentType == "text")) {
-            
             let myBlob = await request.arrayBuffer();
             let h = await hashed(myBlob);
             let path = `#${contentType}/+.(+.@+sha256..@+base64.+._${h}.).(@+www.)`
@@ -251,11 +260,21 @@ async function handleRequest(request) {
                 })
             })
         }
-        if (ressource == "/@(/+):+:") {
-            let id = `/#carte/+.(+${new Date().toISOString()}:+.+.).(/+:+:+.+.)`;
-            //let save = await MY_KV.put(id, `(#carte/+.+.).(/+:+:+.+.)`);
-            let encoded = encodeURIComponent(id);
-            return new Response(carte({media:null, titre: null, tags:null, actions: [contacter({nom:null,tel:null,domaine:null})]}), {
+        if (ressource == "/@(/+):(+):+.+.") {
+            let b = await request.text();
+            let o = decodeURIComponent(b.split("=")[1]).substring(1);
+            if (o == "#carte/") {
+                let id = `#carte/+.(@(+${new Date().toISOString()}).+.((/+):(+):+.+.))`;
+                //console.log("let us save "+id)
+                //let saved = await MY_KV.put(`@+${domain}/${id}`,'+.');
+                return new Response(await U.s(MY_KV, domain, `(@+html.).((${id}).(@(/+):+.+.))?`), {
+                    status: 200,
+                    headers: new Headers({
+                        "Content-Type": "text/html;charset=UTF-8"
+                    })
+                })
+            }
+            return new Response(null, {
                 status: 200,
                 headers: new Headers({
                     "Content-Type": "text/html;charset=UTF-8"

@@ -26,11 +26,8 @@ module.exports =  () => `
     }
     nav button {
       margin-right:2%;
-      height:80%;
-      font-size:120%;
-      border:none;
-      border-radius:30%;
-      background-color:white;
+      background-color:black;
+      border:0;
     }
     #cards {
       margin-top:17%;
