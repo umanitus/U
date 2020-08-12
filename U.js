@@ -1,5 +1,15 @@
 /* This is U, a program that thinks FROM natural languages NOT IN programming languages*/
 
+
+const partager = require("./display/partager.js");
+const valoriser = require ("./display/valoriser.js");
+const jouer = require("./display/jouer.js");
+const passer = require("./display/passer.js");
+const acheter = require("./display/acheter.js");
+const procurer = require("./display/procurer.js");
+const contacter = require("./display/contacter.js");
+
+
 //Utils
 const anU = c => c!="" && (c=="(" || c==")" || c=="+" || c=="-" || c=="#" || c=="/" || c=="." || c=="@" || c==":" || c=="_" || c=="&" || c=="?" || c=="%")
 const aD = c => c!="" && (c=="0" || c=="1" || c=="2" || c=="3" || c=="4" || c=="5" || c=="6" || c=="7" || c=="8" || c=="9")
@@ -9,7 +19,23 @@ const decapsulated = text => {
         return text.substring(text.charAt(0)=="("?1:0,text.slice(-1)==")"?text.length-1:text.length);
     return text;
 }
-const pointified = text => anU(text.charAt(text.length-1))?text:(text+".")
+const pointified = text => anU(text.charAt(text.length-1))?text:(text+".");
+
+const buts = carte => {
+    let options = ["vendre","vouloir","taster"] ; 
+    let h = "";
+    let colors = {
+        "vendre":"#C32C57",
+        "vouloir":"#2E6FCC",
+        "taster":"#62275D"
+    }
+    for (let i = 0; i< options.length; i++)
+        h += `<form>
+                <button style="background-color:${colors[options[i]]}" hx-put="/${encodeURIComponent(`#(@+:+.(#(@+.+.(${carte}))/+.))/+.`)}" hx-target='closest .card' hx-swap='outerHTML'>${options[i].toUpperCase()}</button>
+                <input type="hidden" name="o" value="(/+):${options[i]}:+.+."/>
+              </form>`
+    return h;
+}
 
 //Parser
 const p = t => {
@@ -136,28 +162,40 @@ module.exports = (memory) => {
 }
 */
 
+// le_but est #(@+:+.(#(@+.+.({l'outil}))/+.))/+.
+
 const from = async (memory, domain, t) => {
     t=t.replace(/\s/g,"");
     var parsed=p(t);
-    console.log(parsed);
+    //console.log(parsed);
     var f=parsed[0];
     if (f=="? ") {
+        //console.log("This is a question on "+parsed[1]);
         let in_memory = await memory.get(domain+"/"+parsed[1]);
         if (in_memory)
             return "("+in_memory+")"
         let q = p(parsed[1]);
+        //console.log("Need to decompose the question as "+q);
         if (q[0] == '.') {
             let k = p(q[1]);
             if (k[0] == "@.") {
                 if (k[1] == "+html") {
+                    //console.log("this is in HTML for "+q[2]);
                     let o = p(q[2]);
                     if (o[0] == ".") {
                         let c = p(o[1]);
                         if (c[0] == "/+") {
                             if (c[1] == "#carte/") {
+                                let but = await from(memory,domain,`#(@+:+.(#(@+.+.(${o[1]}))/+.))/+.?`);
+                                if (but == "?")
+                                    return `
+                                        <article class="card">
+                                            ${buts(o[1])}
+                                        </article>
+                                    `
                                 return `
                                     <article class="card">
-                                        ${await from(memory,domain, "(@+html.).(#video/+.@("+o[1]+")?")}
+                                        ${await from(memory,domain, "(@+html.).(#video/+.(@("+o[1]+").+.+.))?")}
                                     </article>
                                 `
                             }
@@ -166,22 +204,31 @@ const from = async (memory, domain, t) => {
                     if (o[0] == "/+") {
                         if (o[1] == "#video/") {
                             let url = await from(memory, domain, "(@+www.).("+q[2]+")?");
-                            return `
-                                    <section class="media">
-                                        <form>
-                                            <label id="label_image" for="media">
-                                                <img id='image' for="media" src= 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAb1BMVEX///8AAAA+Pj7i4uLd3d1ISEhWVlb19fXIyMhra2vv7+/6+vrLy8sqKionJyfq6upbW1uXl5fR0dGnp6dwcHB8fHxQUFCIiIi0tLQgICAJCQmQkJBiYmIZGRm6urqUlJQ4ODijo6MVFRUxMTGCgoJHxlCNAAADT0lEQVR4nO3d4XaaQBBAYRQUlSiKiUk1SZuk7/+MPWhbJeywCCndGe/9a/f0fMmeWoUdooiIiIiIiIiIiIiIiIiIiEhP8XIcfqs+wmSkIYQIww8hwvBDiDD8ECIMv68TjvM4kDoJN7tppUlcE076/LC+tA7CdF373SeRJeGdY3ebEn53AC0JFzsX0JBw5vQZEj4KQCvCfCIBjQhfRZ8NYfbQALQgjH80AQ0Inxp9BoT3HqB2YfLNB/QK0/X8sgFc5/zCrdfXQtjiB/mv8v3V2bwFULMw2btJm+q7v17hm9u3n0U2hOmzG7hbRDaExbsbeChftCDcuH374viqfuFi6gauF6fX1Qtnwg7d/PkD2oXCR9334u863cJ87AY+p+d1qoWvwrv89nKdZqHwUfelqKzTK8yFj7rzrLruOmE2qzQcL6oJpY+628/rrhP+z6oQ4d/Qj6S2TqvQ3X1WX2dK+ORaZ0g4ru/QMjvCB8cOLTMjfJXWGREer167syF8bFhnQiju0DIDwsmicZ1+4cGzTr3Q+59j5cJd8w4t0y307dAyzcKXuzbrFAunqX9RpFm48S85plW4LPwrTmkVCh8kHGkVtl+HEOFwIZRCiHC4EEohRDhcCKUQIhwuhFIIEQ4XQimECIcLoRRChMOFUAohwuGqCu1fP1yZvwZs/zr+6AbuxbiB+2lG9u+JGt3AfW0jU/cmJsJJvKY7oMv0CMWzambuEY7k0TpG7vMui4XxSDbu1T8lnFkzcd7id1fvVHXCKHePmjNw7uncwU1Uf3btImmgnvLzh5elwk7VfYa0mrBTl5rPAX9q1mbaQJlaobhT+53HDythLk2vmQqBVQjz2XrMxQgtxyjkY91nm4TXm5u47zqfJsCKpdvYccZQiEmz9rrNiQozaV5il1lfgRav3MQO89pCLRPmlu5yK0Jx9uzVcxMDLhbe/a+cfRl0jTOgTQi9U5L1C6P4w7qwxU5VL2ycOG9D2PTUACPCKPppXih+2WhHKH4tbkcoftloSOh8EpItoTRA2ZBQ+LLRlFDdM7s61Oq5a+E8O6+S+1JhvRbPzgu1Pr9ahGGEEGH4IUQYfggRhh/CpuLlOPxWfYRERERERERERERERERERERa+gVTL0cqJsc+sQAAAABJRU5ErkJggg=='/>
-                                            </label>
-                                            <input accept="video/*" capture="camera" id="media" style="display:none" id="files-upload" type="file">
-                                        </form>
-                                    </section>
-                            `
+                            if (url == "?")
+                                return `
+                                        <section class="media">
+                                            <form>
+                                                <label id="label_image" for="media">
+                                                    <img id='image' for="media" src= 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAb1BMVEX///8AAAA+Pj7i4uLd3d1ISEhWVlb19fXIyMhra2vv7+/6+vrLy8sqKionJyfq6upbW1uXl5fR0dGnp6dwcHB8fHxQUFCIiIi0tLQgICAJCQmQkJBiYmIZGRm6urqUlJQ4ODijo6MVFRUxMTGCgoJHxlCNAAADT0lEQVR4nO3d4XaaQBBAYRQUlSiKiUk1SZuk7/+MPWhbJeywCCndGe/9a/f0fMmeWoUdooiIiIiIiIiIiIiIiIiIiEhP8XIcfqs+wmSkIYQIww8hwvBDiDD8ECIMv68TjvM4kDoJN7tppUlcE076/LC+tA7CdF373SeRJeGdY3ebEn53AC0JFzsX0JBw5vQZEj4KQCvCfCIBjQhfRZ8NYfbQALQgjH80AQ0Inxp9BoT3HqB2YfLNB/QK0/X8sgFc5/zCrdfXQtjiB/mv8v3V2bwFULMw2btJm+q7v17hm9u3n0U2hOmzG7hbRDaExbsbeChftCDcuH374viqfuFi6gauF6fX1Qtnwg7d/PkD2oXCR9334u863cJ87AY+p+d1qoWvwrv89nKdZqHwUfelqKzTK8yFj7rzrLruOmE2qzQcL6oJpY+628/rrhP+z6oQ4d/Qj6S2TqvQ3X1WX2dK+ORaZ0g4ru/QMjvCB8cOLTMjfJXWGREer167syF8bFhnQiju0DIDwsmicZ1+4cGzTr3Q+59j5cJd8w4t0y307dAyzcKXuzbrFAunqX9RpFm48S85plW4LPwrTmkVCh8kHGkVtl+HEOFwIZRCiHC4EEohRDhcCKUQIhwuhFIIEQ4XQimECIcLoRRChMOFUAohwuGqCu1fP1yZvwZs/zr+6AbuxbiB+2lG9u+JGt3AfW0jU/cmJsJJvKY7oMv0CMWzambuEY7k0TpG7vMui4XxSDbu1T8lnFkzcd7id1fvVHXCKHePmjNw7uncwU1Uf3btImmgnvLzh5elwk7VfYa0mrBTl5rPAX9q1mbaQJlaobhT+53HDythLk2vmQqBVQjz2XrMxQgtxyjkY91nm4TXm5u47zqfJsCKpdvYccZQiEmz9rrNiQozaV5il1lfgRav3MQO89pCLRPmlu5yK0Jx9uzVcxMDLhbe/a+cfRl0jTOgTQi9U5L1C6P4w7qwxU5VL2ycOG9D2PTUACPCKPppXih+2WhHKH4tbkcoftloSOh8EpItoTRA2ZBQ+LLRlFDdM7s61Oq5a+E8O6+S+1JhvRbPzgu1Pr9ahGGEEGH4IUQYfggRhh/CpuLlOPxWfYRERERERERERERERERERERa+gVTL0cqJsc+sQAAAABJRU5ErkJggg=='/>
+                                                </label>
+                                                <input accept="video/*" capture="camera" id="media" style="display:none" id="files-upload" type="file">
+                                            </form>
+                                        </section>
+                                `
+                            else 
+                                return `
+                                                <section class="media">
+                                                    <video poster="${decapsulated(await from(memory,domain,'#image/.(+.@+.+./+.).@+www.?'))}" controls playsinline style="width:100%" src="${url}">
+                                                    </video>
+                                                </section>
+                                        `
+                            
                         }
                     }
                 }
             }
         }
-        return "bilou";
+        return "?";
         /*
         var in_memory=await memory.get(domain+parsed[1]);
         if (in_memory)

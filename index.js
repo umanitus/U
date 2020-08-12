@@ -39,16 +39,7 @@ const style = require("./display/style.js");
 const header = require("./display/header.js");
 const carte = require("./display/carte.js");
 const media = require("./display/media.js");
-const partager = require("./display/partager.js");
-const valoriser = require ("./display/valoriser.js");
-const jouer = require("./display/jouer.js");
-const passer = require("./display/passer.js");
-const servir = require("./display/servir.js");
-const taster = require("./display/taster.js");
-const vouloir = require("./display/vouloir.js");
-const acheter = require("./display/acheter.js");
-const procurer = require("./display/procurer.js");
-const contacter = require("./display/contacter.js");
+
 const se_connecter = require("./display/se_connecter.js");
 const U = require("./U.js");
 import { AwsClient } from 'aws4fetch';
@@ -123,7 +114,7 @@ async function handleRequest(request) {
     if (d === "umanitus.com") {
         let parts = link.pathname.split('/');
         domain = "https://umanitus.com/"+parts[1];
-        ressource = request.url.substring(domain.length);
+        ressource = decodeURIComponent(request.url.substring(domain.length));
     }
     
     //Getting the user
@@ -163,7 +154,7 @@ async function handleRequest(request) {
         owner.niveau = await MY_KV.get(`${user}/#niveau/+.(@+.+./+.).@+umanitus.`);
         owner.niveau = owner.niveau ? parseInt(owner.niveau) : 0 ;
         owner.jetons = owner.jetons ? parseInt(owner.jetons) : 0 ;
-        console.log(owner);
+        //console.log(owner);
         
         console.log(ressource);
         if (ressource == '/') {
@@ -174,8 +165,8 @@ async function handleRequest(request) {
                 })
             })
         }
-        let subject = U.parse(ressource.substring(1));
-        
+        ressource = ressource.substring(1);
+        let subject = U.parse(ressource);
         if (subject[1] == "#image/") {
             let product = await MY_KV.get("@+"+domain+"."+ressource,"arrayBuffer");
             return new Response(product, {
@@ -227,14 +218,13 @@ async function handleRequest(request) {
             });
         }
         if (subject[1] == "#carte/") {
-            /*
-            let c = '/'+ressource ;
-            let la_carte = {
-                video: await MY_KV.get(`${domain}/#video/+.(@(${c}).+.+.).(@+www.)`),
-                but: await MY_KV.get(`${domain}/#:%/+.@(#(@(@+.+.(${c}).((/+):+:+.+.)).):+.+.)/+.).+.+.`)
-            };
-            */
             
+            return new Response(await U.s(MY_KV, domain, `(@+html.).((${ressource}).(@(/+):+.+.))?`), {
+                    status: 200,
+                    headers: new Headers({
+                        "Content-Type": "text/html;charset=UTF-8"
+                    })
+            })
         }
     }
     else if (request.method == "POST") {
@@ -266,7 +256,7 @@ async function handleRequest(request) {
             if (o == "#carte/") {
                 let id = `#carte/+.(@(+${new Date().toISOString()}).+.((/+):(+):+.+.))`;
                 //console.log("let us save "+id)
-                //let saved = await MY_KV.put(`@+${domain}/${id}`,'+.');
+                //let saved = await MY_KV.put(`${domain}/${id}`,'+.');
                 return new Response(await U.s(MY_KV, domain, `(@+html.).((${id}).(@(/+):+.+.))?`), {
                     status: 200,
                     headers: new Headers({
@@ -280,34 +270,6 @@ async function handleRequest(request) {
                     "Content-Type": "text/html;charset=UTF-8"
                 })
             });
-        }
-        if (ressource == "/#video/") {
-            const { headers } = request ;
-            const contentType = headers.get("content-type");
-            if (contentType.includes("video/")) {
-                let myBlob = await request.arrayBuffer();
-                let h = await hashed(myBlob);
-                let path = `#octet//+.(+.@+sha256..@+base64.+._${h}.)`
-                let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
-                return new Response(`<video controls autoplay src='https://${domain}.umanitus.com/${encodeURIComponent(path)}'></video>`, {
-                    status:200,
-                    headers: new Headers({
-                        "Content-Type":"text/html"
-                    })
-                });
-            }
-        }
-        if (ressource == "/#image/") {
-            let myBlob = await request.arrayBuffer();
-            let h = await hashed(myBlob);
-            let path = `#image/+.+.#octet//+.(+.@+sha256..@+base64.+._${h}.)`;
-            let k = await MY_KV.put(`@+${domain}./${path}`,myBlob);
-            return new Response(carte("3",media({image:`https://${domain}.umanitus.com/${encodeURIComponent(path)}`}),'Qualifier ce que tu vends avec des tags',["à vendre"], []), {
-                status:200,
-                headers: new Headers({
-                    "Content-Type":"text/html;charset=UTF-8"
-                })
-            })
         }
         if (ressource == "/servir") {
             let b = await request.text();
