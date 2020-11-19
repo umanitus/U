@@ -652,7 +652,10 @@ const U = async (host, request) => {
                     }
                 }
                 else if (c == '@') {
-                    parsed[0] = '@';
+                    if (parsed[0] != '.')
+                        parsed[0] = '@';
+                    else
+                        parsed[filler]+=c;
                 }
                 else if (c== ':') {
                     if (i == l-1) {
@@ -672,33 +675,48 @@ const U = async (host, request) => {
                     }
                 }
                 else if (c=='.' || c == '&' || c == '?' || c == '_') {
-                    if (i == l-1) {
+                    if (i == l-1 && parsed[0]!= '.') {
                         parsed[1] = c;
                         parsed[2] = pt(dec(parsed[2]));
                     }
                     else if (!anU(t.charAt(i+1))) {
                         parsed[filler]+= c;
                     }
-                    else if (!parsed[0]) {
+                    else if (!parsed[0] || parsed[0] == '+' || parsed[0] == '-' || parsed[0] == '#') {
                         parsed[0] = c;
-                        filler = 1;
+                        parsed[1] = pt(t.substring(0,i));
+                        parsed[2] = "";
                     }
                     else {
-                        filler = 2;
+                        parsed[filler]+=c;
                     }
                 }
                 else if (c == '#') {
-                    parsed[0] = '#';
+                    if (!parsed[0]) {
+                        parsed[0] = '#';
+                    }
+                    else {
+                        parsed[filler]+=c;
+                    }
+
                 }
-                /*
                 else if (c == '/') {
                     let n = i < l - 1 ? t.charAt(i+1) : "";
                     let p = i > 0 ? t.charAt(i-1) : "";
                     if (n == '/') {
-                        parsed = ['','//', t.substring(0,i)]
+                        parsed = ['','/', t.substring(0,i+1)]
+                        i++;
+                    }
+                    else if (!p) {
+                        parsed[0] = '/';
+                    }
+                    else if (parsed[0] == '+' && parsed[0] == '#') {
+                        parsed[1] = '/';
+                    }
+                    else {
+                        parsed[filler]+=c;
                     }
                 }
-                */
             }
             else {
                 parsed[filler] += c ;
@@ -758,8 +776,7 @@ const U = async (host, request) => {
                 let t = test.value;
                 let success = false;
                 if (typeof v[2] != 'string') {
-                    success = t[0] == v[0] && t[1] == v[1]  ;
-                    // && t[2][1] == v[2][1] && t[2][2] == v[2][2]
+                    success = t[1] == v[1] && t[0] == v[0] && t[2][1] == v[2][1] && t[2][2] == v[2][2]
                     console.log("I have "+success);
                 }
                 else {
