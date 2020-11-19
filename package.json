@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "u",
-  "version": "2020-11-13",
+  "version": "2020-11-19T14:46Z",
   "description": "Le meilleur moyen de jouer à Umanitus",
   "main": "index.js",
   "scripts": {
