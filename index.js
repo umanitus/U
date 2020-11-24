@@ -1,12 +1,12 @@
-addEventListener('fetch', event => {                    // Un Service sans Serveurs à opérer
+addEventListener('fetch', event => {                                // Un Service sans Serveurs à opérer
   event.respondWith(HOST.handleRequest(event.request))   
 })
 
 // Hôte
 const HOST = {
-    name:"CLOUDFLARE_WORKERS",                             // Au-delà des VMs de x86 et des conteneurs de Linux, les Isolates de V8 : plus léger et réactif
+    name:"CLOUDFLARE_WORKERS",                                      // Au-delà des VMs de x86 et des conteneurs de Linux, les Isolates de V8 : plus léger et réactif
     handleRequest: async (request) => {
-        let {status, headers, body} = await U(HOST,request); // HTTP comme réponse
+        let {status, headers, body} = await U(HOST,request);        // HTTP comme réponse
             return new Response(body, {
                 status,
                 headers
@@ -17,12 +17,12 @@ const HOST = {
         let link = new URL(req.url);
         let parts = link.pathname.split("/");
       
-        response.chemin = parts[1];                         // Un chemin pour chaque umain
+        response.chemin = parts[1];                                 // Un chemin pour chaque umain
       
-        let cle = link.searchParams.get("cle");             // Une clé pour la lecture par un U
+        let cle = link.searchParams.get("cle");                     // Une clé pour la lecture par un U
       
         if (!cle) {
-            let cookie_string = req.headers.get("cookie");   // Une clé pour l'action quotidienne par un propriétaire
+            let cookie_string = req.headers.get("cookie");          // Une clé le quotidien par un propriétaire
             let cookies = cookie_string ? cookie_string.split(";") : [] ;
             for (let i = 0;i<cookies.length;i++) {
                 let kv = cookies[i].split("=");
@@ -35,7 +35,7 @@ const HOST = {
         response.cle = cle ;
       
         let sujet = parts[2] ? '/'+decodeURIComponent(decodeURIComponent(parts[2])) : '';
-        if (req.method == 'GET') {                         // Un GET est une question
+        if (req.method == 'GET') {                                  // Un GET est une question
             response.message = sujet + '?';
         }
         else {
@@ -46,33 +46,34 @@ const HOST = {
                 let params = body.split("&");
                 if (params[1]) {
                     let s = params[1].split("=");
-                    if (s[0] == "secret") {
-                        response.cle = await HOST.hashed(new TextEncoder().encode(SALT+s[1])); // Une clé pour ouvrir le domicile
+                    if (s[0] == "secret") {                         // Une clé pour ouvrir le domicile
+                        response.cle = await HOST.hashed(new TextEncoder().encode(SALT+s[1])); 
                     }
-                }
-                objet = params[0] ? decodeURIComponent(params[0].split("=")[1]) : '';  // Une URL comme objet
+                }                                                   // Une URL comme objet
+                objet = params[0] ? decodeURIComponent(params[0].split("=")[1]) : '';  
             }
-            else {                                                                // Un Blob à traiter
+            else {                                                  // Un Blob à traiter
                 let content = contentType.split("/");
                 let myBlob = await req.arrayBuffer();
-                let hash = await HOST.hashed(myBlob);                                       // Un hash comme identité
-                let url = await HOST.save(hash,myBlob,contentType);                         // Une URL comme sauvegarde
-                objet = `/#${content}/+.(+.(@+sha256.)+.+${hash}.).(+.(@+www.)+.(${url}))` // Un objet comme le 'contenu représenté en SHA256 et dont l'URL est URL
+                let hash = await HOST.hashed(myBlob);               // Un hash comme identité
+                let url = await HOST.save(hash,myBlob,contentType); // Une URL comme sauvegarde
+                                                                    // Un objet comme un contenu en SHA256 et sur le Web
+                objet = `/#${content}/+.(+.(@+sha256.)+.+${hash}.).(+.(@+www.)+.(${url}))` 
             }
-            if (req.method == "POST") {                    // Un POST est un ajout
+            if (req.method == "POST") {                             // Un POST est un ajout
                 response.message = `(${sujet})+.(${objet})`   
             }
             else if (req.method == "PUT") {
-                response.message = `(#(${objet})/+.)+.(${objet})` // Un PUT est une définition
+                response.message = `(#(${objet})/+.)+.(${objet})`   // Un PUT est une définition
             }
             else if (req.method == "DELETE") {
-                response.message = `(${sujet})-.(${objet})` // Un DELETE est un retrait
+                response.message = `(${sujet})-.(${objet})`         // Un DELETE est un retrait
             }
         }
         return response;
     },
-    save: async (id, blob, type) => {                     // Sur AWS S3
-        const encoder = new TextEncoder('utf-8');
+    save: async (id, blob, type) => {                               // Des blobs immuables sur un bucket AWS S3
+        const encoder = new TextEncoder('utf-8');                   // La librairie de AWS4Fetch
         const HOST_SERVICES = {
             'appstream2': 'appstream',
             'cloudhsmv2': 'cloudhsm',
@@ -358,40 +359,39 @@ const HOST = {
         })});
         return url ;
     },
-    get: async key => {
+    get: async key => {                                             // L'hôte permet de lire des clés
         return await MY_KV.get(key);
     },
-    set: async (key,value) => {
+    set: async (key,value) => {                                     // L'hôte permet d'écrire des clés
         return await MY_KV.put(key,value);
     },
-    list: async key => {
+    list: async key => {                                            // L'hôte permet de scanner des clés
         return await MY_KV.list(key);
     },
-    hashed: async (bytes) => {
+    hashed: async (bytes) => {                                      // L'hôte permet de hasher des blobs
         const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         return hashHex;
     },
-    makeKey: () => crypto.getRandomValues(new Uint8Array(40))
+    makeKey: () => crypto.getRandomValues(new Uint8Array(40))       // L'hôte permet de générer des nombres aléatoire
 }
 // U
 const U = async (host, request) => {
-    let {chemin, cle, message} = await host.fromHTTP(request);
-    //console.log(message);
+    let {chemin, cle, message} = await host.fromHTTP(request);      // Important dans la requête
    
-    // Mémoire
-    const get = async key => {              // Aller chercher une valeur brute en mémoire
+                                                                    // Par défaut, la mémoire est segmentée par umain
+    const get = async key => {                                      // Aller chercher une valeur brute en mémoire
         return await host.get(chemin+key);  
     }
-    const set = async (key,value) => {      // Mémoriser une valeur brute
+    const set = async (key,value) => {                              // Mémoriser une valeur brute
       await host.set(chemin+key,value);
     }
-    const list = async key => {             // Aller chercher toutes les versions
+    const list = async key => {                                     // Aller chercher toutes les versions
         return await host.list(chemin+key)
     }
 
-    // IO
+                                                                    // IO
     const style = `
         <style>
             body {
@@ -607,7 +607,7 @@ const U = async (host, request) => {
     const pt = text => anU(text.charAt(text.length-1)) ? text : (text+".");
     const m = () => '@+'+new Date().toISOString()+'.';
     
-    const p = t => {                                    // Parser depuis toute langue naturelle
+    const p = t => {                                                // Parser depuis toute langue naturelle
         let parsed = [];
         if (!t)
             return parsed ;
@@ -801,14 +801,14 @@ const U = async (host, request) => {
         }
         return '?';
     }
-    let response = {                                    // Par défaut
+    let response = {                                                // Par défaut
         status:200,
         headers: {
             'Content-Type':'text/html'
         }
     } ;
-    if (chemin) {                                       // Trouvé son chemin
-        if (chemin == 'u') {                            // C'est pour le code lui-même
+    if (chemin) {                                                   // Trouvé un chemin
+        if (chemin == 'u') {                                        // C'est pour le code lui-même
             if (message == '/tests?') {
                 let test_data = await get('/#test//+.') ;
                 let tests = JSON.parse(test_data).tests ;
@@ -837,7 +837,7 @@ const U = async (host, request) => {
         else {
             let m = p(message);
             let de_la_cle = cle ? await get(`/+${cle}.`) : null ;
-            if (!de_la_cle && m[1] == '?') {           // Pas de lecture sans clé
+            if (!de_la_cle && m[1] == '?') {                        // Pas de lecture sans clé
                 let msisdn = chemin.substring(1); // Le MSISDN comme identité
                 response.body = page({
                     cartes:[
@@ -875,7 +875,7 @@ const U = async (host, request) => {
                     ]
                 });
             }
-            else if (de_la_cle == "/(/+)#secret/+.") { // Propriétaire de retour
+            else if (de_la_cle == "/(/+)#secret/+.") {              // Propriétaire de retour
                 const cle = await HOST.hashed(HOST.makeKey()); // Une nouvelle clé d'accès
                 await set(`/+${cle}.`, '/(/+)#cle/.');         // A mémoriser
                 response.status = "301",                       // Une redirection
@@ -885,9 +885,9 @@ const U = async (host, request) => {
                     "Set-Cookie":`cle=${cle};Secure;SameSite=Strict;Max-Age=8000;Path=/;`
                 }
             }
-            else if (de_la_cle == '/(/+)#cle/.') {     // Le propriétaire à l'ouvrage
+            else if (de_la_cle == '/(/+)#cle/.') {                  // Le propriétaire à l'ouvrage
                 let format = '(@+html.)';
-                if (m[1] == '?' && message =='?') {    // Le chemin du domicile 
+                if (m[1] == '?' && message =='?') {                 // Le chemin du domicile 
                     let keys = [
                         '/#image/+.(/+.@+.+.#+/).@+www.',   //L'image sur le Web me représentant 
                         '//+#jeton//+.#//+.',               //Le nombre de mes jetons
@@ -909,18 +909,18 @@ const U = async (host, request) => {
                         cartes:[]
                     });
                 }
-                else if (m[1] == '.') {                // Le proprio dit quelque chose
+                else if (m[1] == '.') {                             // Le proprio dit quelque chose
                     if (m[2][0] == '+') {
                         let sujet = m[2][1];
                         let objet = m[2][2];
-                        if (sujet == '/(@/+:@#+/:+.#+/):+.+.') { // Le proprio veut faire quelque chose pour quelqu'un 
+                        if (sujet == '/(@/+:@#+/:+.#+/):+.+.') {    // Le proprio veut faire quelque chose pour quelqu'un 
                             let c = `/#carte/+.(@+${new Date().toISOString()}.+.(@/+:+:+.+.))`;
                             let souvenir = await f(`@(${c}).+.(${objet})`);
                             response.body = carte({
                                 media:media({auteur: await get('/#image/+.((/+).@+.+.#+/).(@+www.)'),url:''})
                             });
                         }
-                        else if (sujet == '/@/+:inviter:+.+.') { // Le proprio invite un non umain
+                        else if (sujet == '/@/+:inviter:+.+.') {    // Le proprio invite un non umain
                             let invitation = await HOST.hashed(HOST.makeKey());
                             let k = '@'+pt(objet)+'/+'+invitation+'.';
                             await HOST.set(k,'/(#+/:inviter:+./+.):+.+.'); // La seule fois où on n'écrit à la racine
@@ -934,7 +934,7 @@ const U = async (host, request) => {
             }
         }
     }
-    else {                                              // Perdu sans cheminon
+    else {                                                          // Perdu sans cheminon
         response.body = page(JSON.parse(await get("#manifeste/+.")));
     }
     return response;
