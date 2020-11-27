@@ -616,7 +616,6 @@ const U = async (host, request) => {
             return parsed;
         }
         let parens = 0 ;
-        let filler = 2 ;
         parsed[2] = '';
         for (let i = 0;i<l;i++) {
             let c = t.charAt(i);
@@ -628,7 +627,7 @@ const U = async (host, request) => {
             }
             if ((parens == 0) && anU(c)) {
                 if (c == ')') {
-                    parsed[filler]+=c;
+                    parsed[2]+=c;
                 }
                 else if (c == "+" || c == '-') {
                     let n = i < l - 1 ? t.charAt(i+1) : "";
@@ -650,14 +649,14 @@ const U = async (host, request) => {
                         if (!parsed[0] )
                             parsed[0] = c;
                         else
-                            parsed[filler]+=c;
+                            parsed[2]+=c;
                     }
                 }
                 else if (c == '@') {
                     if (parsed[0] != '.')
                         parsed[0] = '@';
                     else
-                        parsed[filler]+=c;
+                        parsed[2]+=c;
                 }
                 else if (c== ':') {
                     if (i == l-1) {
@@ -681,8 +680,11 @@ const U = async (host, request) => {
                         parsed[1] = c;
                         parsed[2] = pt(dec(parsed[2]));
                     }
+                    else if (i == 0) {
+                        parsed[0] = c ;
+                    }
                     else if (!anU(t.charAt(i+1))) {
-                        parsed[filler]+= c;
+                        parsed[2]+= c;
                     }
                     else if (!parsed[0] || parsed[0] == '+' || parsed[0] == '-' || parsed[0] == '#') {
                         parsed[0] = c;
@@ -690,7 +692,7 @@ const U = async (host, request) => {
                         parsed[2] = "";
                     }
                     else {
-                        parsed[filler]+=c;
+                        parsed[2]+=c;
                     }
                 }
                 else if (c == '#') {
@@ -698,7 +700,7 @@ const U = async (host, request) => {
                         parsed[0] = '#';
                     }
                     else {
-                        parsed[filler]+=c;
+                        parsed[2]+=c;
                     }
                 }
                 else if (c == '/') {
@@ -711,23 +713,26 @@ const U = async (host, request) => {
                     else if (!p) {
                         parsed[0] = '/';
                     }
-                    else if (parsed[0] == '+' && parsed[0] == '#') {
+                    else if (parsed[0] == '+' || parsed[0] == '#') {
                         parsed[1] = '/';
+                        parsed[2] = dec(pt(t.substring(1,i)));
                     }
                     else {
-                        parsed[filler]+=c;
+                        parsed[2]+=c;
+                    }
+                }
+                else if (c == '%') {
+                    if (i==0) {
+                        parsed[0] = '%' ;
+                    }
+                    else if (i == l-1) {
+                        parsed[1] = '%' ;
                     }
                 }
             }
             else {
-                parsed[filler] += c ;
+                parsed[2] += c ;
             }
-            /*
-            if (t == '(/#video/).(+.(@+sha256.)+.+3ac8549b72865d5a0fafa7a94e89b3336cd947e63ed84b674257e68626970060.).(+.(@+www.)+.(https://s3.eu-west-3.amazonaws.com/umanitus.com/3ac8549b72865d5a0fafa7a94e89b3336cd947e63ed84b674257e68626970060))') {
-                if (c == ')')
-                    console.log('apres la parens jai '+parsed[2]);
-            }
-            */
         }
         return parsed ;
     }
