@@ -25,20 +25,23 @@ U est construit sur les unités suivantes :
 ## Fait  
 - [x] Etre hébergé sur le Web en serverless sur Cloudflare  
 - [x] Scaler sans gérer les opérations (mode server less)  
-- [x] Que chaque humain puisse avoir son msisdn comme chemin  
-- [x] Que chaque humain puisse s'authentifier à son U avec un secret dans un son portefeuille biométrique de secrets   
-- [x] Que chaque humain voit son image, son nombre de jetons et son niveau à la tête de son domicile    
-- [x] Que chaque humain puisse créer une carte par une vidéo de son smartphone  
-- [x] Que toute vidéo créant toute carte soit sauvegardée  
+- [x] Que tout humain puisse avoir son msisdn comme chemin  
+- [x] Que tout humain puisse s'authentifier à son U avec un secret dans un son portefeuille biométrique de secrets   
+- [x] Que tout humain puisse voir son image, son nombre de jetons et son niveau à la tête de son domicile    
+- [x] Que tout humain puisse créer une carte par une vidéo de son smartphone  
+- [x] Que toute vidéo créant toute carte puisse être sauvegardée  
+- [x] Que tout humain puisse voir la carte créée avec la vidéo  
 
 ## Faisant  
-- [ ] Noter  
+- [ ] Que tout humain puisse éditer les points clés de sa carte  
+- [ ] Que tout humain puisse éditer le prix minimum de sa carte produit  
+- [ ] Que tout humain puisse éditer le prix maximum de sa carte recherche  
 
 ## A faire  
-- [ ] Afficher le média dans la carte
-- [ ] Faire éditer le titre de la carte
-- [ ] Faire ajouter des tags à la carte
-- [ ] Pour un produit à vendre, faire éditer le plancher
-- [ ] Pour un produit à acheter, faire éditer le plafond
-- [ ] Afficher les points dans la monnaie du pays dans lequel est l'Umain
-- [ ] Faire servir la carte aux connaissances de l'Umain
+- [ ] Que tout humain puisse indiquer qu'il a fini sa carte  
+- [ ] Que tout humain puisse éditer les personnes à qui envoyer la carte  
+- [ ] Que tout humain puisse inviter des personnes qui n'ont pas encore de domicile chez Umanitus  
+- [ ] Que tout humain puisse voir si toutes les personnes ont répondu de la carte  
+- [ ] Que tout humain puisse voir quel est le prix à payer ou à recevoir pour le produit de la carte  
+- [ ] Que tout humain puisse donner son accord pour ce prix  
+- [ ] Que tout humain puisse voir la mise à jour de son nombre de jetons et de son niveau suite à l'accord  
