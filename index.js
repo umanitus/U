@@ -58,7 +58,7 @@ const HOST = {
                 let hash = await HOST.hashed(myBlob);               // Un hash comme identité
                 let url = await HOST.save(hash,myBlob,contentType); // Une URL comme sauvegarde
                                                                     // Un objet comme un contenu en SHA256 et sur le Web
-                objet = `/#${content[0]}/+.(+.(@+sha256.)+.+${hash}.).(+.(@+www.)+.(${url}))` 
+                objet = `/#${content[0]}/+.(+.@+sha256.+.+${hash}.).(+.@+www.+.(${url}))` 
             }
             if (req.method == "POST") {                             // Un POST est un ajout
                 response.message = `(${sujet})+.(${objet})`   
@@ -359,14 +359,15 @@ const HOST = {
         })});
         return url ;
     },
-    get: async key => {                                             // L'hôte permet de lire des clés
+    get: async key => {                                             // L'hôte permet de lire des clés                                   
         return await MY_KV.get(key);
     },
     set: async (key,value) => {                                     // L'hôte permet d'écrire des clés
         return await MY_KV.put(key,value);
     },
-    list: async key => {                                            // L'hôte permet de scanner des clés
-        return await MY_KV.list(key);
+    list: async key => {    
+        let buffer = await MY_KV.list({prefix:key});                // L'hôte permet de scanner des clés
+        return buffer.keys.map(k => k.name.split('.').slice(1).join('.'));         
     },
     hashed: async (bytes) => {                                      // L'hôte permet de hasher des blobs
         const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
@@ -474,12 +475,12 @@ const U = async (host, request) => {
                 border-radius:5px;
                 font-size:100%;
                 box-shadow:  2px 1px 2px 1px rgba(0,0,0,0.6);
-                border:none;
                 padding:2%;
                 margin-top:2%;
             }
             .actions button {
                 color:white;
+                border:none;
             }
             .actions input {
                 color:black;
@@ -523,7 +524,7 @@ const U = async (host, request) => {
     const button = ({texte, couleur, url, target, methode }) => `
         <button 
             style="background-color:${couleur}" 
-            ${ methode && (methode != 'login') ? `hx-post="${url}" hx-swap="outerHTML" hx-target=${target ? `"${target}"`: "closest .card"} ` : ''}
+            ${ methode && (methode != 'login') ? `hx-post="./${encodeURIComponent(url)}" hx-swap="outerHTML" hx-target=${target ? `"${target}"`: "closest .card"} ` : ''}
         >
             ${texte}
         </button>`
@@ -534,7 +535,7 @@ const U = async (host, request) => {
             placeholder="${texte || ''}" 
             value="${valeur || ''}"
             name="${name || ''}"
-            ${ type != 'password' ? `hx-post="./${id}" hx-swap="outerHTML" hx-target='closest .card'` : ''}
+            ${ type != 'password' ? `hx-post="./${encodeURIComponent(id)}" hx-swap="outerHTML" hx-target='closest .card'` : ''}
         />
         ${list ? `<datalist>${list.map(item => `<option value=${item}>`).join('\n')}</datalist>` : ''}`
     const carte = ({auteur,media,description,tags,actions}) => `
@@ -588,7 +589,7 @@ const U = async (host, request) => {
                      </div>` :''}
                 </nav>
                 <div id="cards">
-                    ${ cartes.map(carte).join('')}
+                    ${ cartes.join('\n')}
                 </div>
             </body>
         </html>`
@@ -605,6 +606,10 @@ const U = async (host, request) => {
     const dec = text => text.charAt(text.length-1)==")" ? text.substring(text.charAt(0)=="("?1:0,text.slice(-1)==")"?text.length-1:text.length) : text
     const pt = text => anU(text.charAt(text.length-1)) ? text : (text+".");
     const now = () => '@+'+new Date().toISOString()+'.';
+    const oD = async props => {
+        let vs = await Promise.all(Object.values(props).map(async k => f(k+'?')));
+        return Object.fromEntries(new Map(Object.keys(props).map((k,i) => [k,vs[i] != '?' ? vs[i] : null])));
+    }
     
     const p = t => {                                                // Parser depuis toute langue naturelle
         let parsed = [];
@@ -736,22 +741,88 @@ const U = async (host, request) => {
         }
         return parsed ;
     }
-    const f = async text => {                
+    const f = async text => {             
         let parsed = p(text);
         if (parsed[1] == '?') {                         // C'est pour lire
+            
             let question = parsed[2];
             let v = await get(question);
+            //console.log("à répondre pour "+question)
             if (v) {
                 return v ;
             }
-            if (question.indexOf("https") !=0) {
-                if (question.indexOf("/") == 0) {
-                    question = question.substring(1);
+            if (question.indexOf("https") !=0) {            // C'est local
+                if (question.charAt(0) == '/')
+                    question=question.substring(1);
+                //console.log(question);
+                let q = p(question);
+                //console.log(p(q[2]));
+                if (q[0] == '.') {
+                    let f2 = p(q[2]);
+                    if (f2[0] == '@') {                     //
+                        let format = f2[2];
+                        let c = q[1];
+                        if (format == '+html.') {
+                            let pour_carte = await oD({
+                                poster:'/#image/+.(/+.@+.+.#+/).@+www.',
+                                cause:`/#+/+.+:+.${c}`,
+                                jetons:`/(/#jeton//+.@(${c}).+.+.).(#//+.)`,
+                                video:`(/#video/+.@(${c}).+.+.).@+www.`,
+                                points:`/#.//+.@(${c}).+.+.`,
+                                suite:`/#carte/+.(${c}):+.+.`
+                            });
+                            let cause = pour_carte.cause ;
+                            let jetons = pour_carte.jetons ? p(pour_carte.jetons)[2] : null ;
+                            return {
+                                media:media({
+                                    auteur:pour_carte.poster,
+                                    url:pour_carte.video
+                                }),
+                                description: '<h1>'+await f(`(${cause}).@+francais.?`)+'</h1>',
+                                actions: [{
+                                    objet:c,
+                                    inputs:[{
+                                        id: '(/#jeton///+.@(${c}).+.+.).(#//+.)',
+                                        type: cause == '/(@/+:(@#+/:):+.#+/):+.+.' || cause =='/(@#+/:(@/+:):+.#+/):+.+.' ? 'number' : 'text',
+                                        texte: cause == '/(@/+:(@#+/:):+.#+/):+.+.' ? "Le minimum que je veux" : '/(@#+/:(@/+:):+.#+/):+.+.' ? "Le maximum que je peux" : "",
+                                        valeur: jetons || ''
+                                    }],
+                                    buttons: cause == '/(@/+:(@#+/:):+.#+/):+.+.' || cause =='/(@#+/:(@/+:):+.#+/):+.+.' 
+                                        ? jetons ? [{methode:'lancer',texte:'Lancer la partie', couleur:'green',url:'//+:+:+.+.'}] : [] 
+                                        : []
+                                }]
+                            }
+                        }
+                        if (format == '+www.') {            // URL à trouver
+                            let c2 = await f(c+'?');
+                            let j = c2.indexOf('https');
+                            return c2.substring(j,c2.length-2);
+                        }
+                        if (format == '+francais.') {
+                            if (c == '/(@/+:(@#+/:):+.#+/):+.+.') {
+                                return 'A vendre'
+                            }
+                            if (c == '/(@#+/:(@/+:):+.#+/):+.+.') {
+                                return 'En recherche'
+                            }
+                        }
+                    }
                 }
-                let objet = p(question);
-                if (objet[0] == '.') {
-                    if (objet[2] == '@+html.') {
-                        return `<article>${objet[1]}</article>`
+                if (q[0] == '+' && q[1] == '.') {            // C'est un désignation
+                    let versions = await list('/'+question); // Y a-t-il une version donnée
+                    if (versions.length != 0 ) {
+                        return versions[versions.length-1] // On retourne la plus récente
+                    }
+                    let points = p(q[2]);                // Sinon, il faut creuser
+                    if (points[0] == '.') {              // Par un produit de facteurs
+                        if (p(points[1])[0] == '#') {    // En partant d'un point commun
+                            let options = await list('/'+points[1]);
+                            if (options.length != 0) {
+                                if (!points[2]) {        // Sans autre point, on renvoie la plus fraiche
+                                    return options[options.length-1];
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -796,31 +867,31 @@ const U = async (host, request) => {
         headers: {
             'Content-Type':'text/html'
         }
-    } ;
+    };
     if (chemin) {                                                   // Trouvé un chemin
         if (chemin == 'u') {                                        // C'est pour le code lui-même
             if (message == '/tests?') {
                 let test_data = await get('/#test//+.') ;
                 let tests = JSON.parse(test_data).tests ;
                 let cartes = Object.entries(tests).map(([cas,test]) => {
-                let v = p(test.expression);
-                let t = test.value;
-                let success = false;
-                if (typeof v[2] != 'string') {
-                    success = t[1] == v[1] && t[0] == v[0] && t[2][1] == v[2][1] && t[2][2] == v[2][2]
-                    console.log("I have "+success);
-                }
-                else {
-                    success = t[0] == v[0] && t[1] == v[1] && t[2] == v[2]
-                }
-                return { 
-                    description : `<h1>${cas}</h1>
+                    let v = p(test.expression);
+                    let t = test.value;
+                    let success = false;
+                    if (typeof v[2] != 'string') {
+                        success = t[1] == v[1] && t[0] == v[0] && t[2][1] == v[2][1] && t[2][2] == v[2][2]
+                        console.log("I have "+success);
+                    }
+                    else {
+                        success = t[0] == v[0] && t[1] == v[1] && t[2] == v[2]
+                    }
+                    return { 
+                        description : `<h1>${cas}</h1>
                                     <p>Venu du naturel : ${test.expression}</p>
                                     <p>Resultat attendu : ${t}</p>
                                     <p>Resultat obtenu- : ${v}</p>
                                     <p>${ success ? 'OK' : 'KO'}</p>`
-                    }
-                });
+                        }
+                }).map(carte);
                 response.body = page({cartes:cartes})
             }
         }
@@ -831,38 +902,38 @@ const U = async (host, request) => {
             if (!de_la_cle && m[1] == '?') {                        // Pas de lecture sans clé
                 let msisdn = chemin.substring(1); // Le MSISDN comme identité
                 response.body = page({
-                    cartes:[
-                        {
-                            description:"<h1>Veuillez saisir votre mot de passe pour acc&eacuteder &agrave; votre U sur votre chemin</h1>",
-                            actions: [
-                                {
-                                    name: "login",
-                                    inputs:[
+                    cartes:[carte({
+                                    description:"<h1>Veuillez saisir votre mot de passe pour acc&eacuteder &agrave; votre U sur votre chemin</h1>",
+                                    actions: [
                                         {
-                                            type:'tel',
-                                            name:'msisdn',
-                                            autocomplete:'tel',
-                                            valeur:msisdn
-                                        },
-                                        {
-                                            type:'password',
-                                            name:'secret',
-                                            autocomplete:'password',   // Le mot de passe automatique protégé par biométrie comme sécurité
-                                            texte:'mot de passe'
-                                        }
-                                    ],
-                                    buttons: [
-                                        {
-                                            couleur:'green',
-                                            texte:"S'authentifier",
-                                            target:"body",
-                                            methode:"login",
-                                            url:""
+                                            name: "login",
+                                            inputs:[
+                                                {
+                                                    type:'tel',
+                                                    name:'msisdn',
+                                                    autocomplete:'tel',
+                                                    valeur:msisdn
+                                                },
+                                                {
+                                                    type:'password',
+                                                    name:'secret',
+                                                    autocomplete:'password',   // Le mot de passe automatique protégé par biométrie comme sécurité
+                                                    texte:'mot de passe'
+                                                }
+                                            ],
+                                            buttons: [
+                                                {
+                                                    couleur:'green',
+                                                    texte:"S'authentifier",
+                                                    target:"body",
+                                                    methode:"login",
+                                                    url:""
+                                                }
+                                            ]
                                         }
                                     ]
                                 }
-                            ]
-                        }
+                    )
                     ]
                 });
             }
@@ -878,26 +949,21 @@ const U = async (host, request) => {
             }
             else if (de_la_cle == '/(/+)#cle/.') {                  // Le propriétaire à l'ouvrage
                 let format = '(@+html.)';
-                if (m[1] == '?' && message =='?') {                 // Le chemin du domicile 
-                    let keys = [
-                        '/#image/+.(/+.@+.+.#+/).@+www.',   //L'image sur le Web me représentant 
-                        '//+#jeton//+.#//+.',               //Le nombre de mes jetons
-                        '/#niveau/+.(@+.+./+.)'             //Le niveau auquel je suis
-                    ];
-                    let values = await Promise.all(keys.map(k => f(k+'?'))); // Un détail pour les valeurs en même temps
-                    //let carte = await f('/#carte/+.(@bien.+.+_-.).(@(/+):+.+.).(@+html.)?';  // La carte qui est la meilleure pour moi
+                if (m[1] == '?' && message =='?') {
+                    let c = await f('/#carte/+.?');        // La carte la plus récente dans la pile
                     // Le mécanisme Umanitus est d'afficher la carte dont l'espérance de valeur pour moi est la plus grande
                     // Cette valeur pour moi, prend en compte l'intérêt des autres
                     // Je peux voir des cartes de 'clients' donnant leur plafond, corrigé de mon coût à les traiter (travail)
                     // Je peux voir des cartes de 'serveurs' donnant leur plancher, corrigé de mon gain à les traiter (publicité)
                     // Je peux aussi laisser mon U les traiter pour moi, notamment si ces cartes sont à relayer (taste)
+                    
                     response.body = page({
-                        owner: {
-                            image:values[0], 
-                            jetons:values[1],
-                            niveau:values[2]
-                        },
-                        cartes:[]
+                        owner : await oD({
+                            image:'/#image/+.(/+.@+.+.#+/).@+www.',
+                            jetons:'//+#jeton//+.#//+.',
+                            niveau:'/#niveau/+.(@+.+./+.)'
+                        }),                   
+                        cartes:[carte(await f(`(${c}).@+html.?`))]
                     });
                 }
                 else if (m[1] == '.') {                             // Le proprio dit quelque chose
@@ -905,13 +971,13 @@ const U = async (host, request) => {
                         let sujet = m[2][1];
                         let objet = m[2][2];
                         if (sujet == '/(@/+:(@#+/:):+.#+/):+.+.') {    // Le proprio veut faire quelque chose pour quelqu'un 
-                            let c = `/#carte/+.(@+${new Date().toISOString()}.+.(@/+:+:+.+.))`;
+                            let c = `/#carte/+.(@+${new Date().toISOString()}.+.(@/+:+:+.+.))`; // Identifié par la naissance
                             //await f(`@(${c}).+.(${objet})`);
                             //J'ecris a la main depuis un schéma des informations immuables
-                            await set(`/#./+.+:+.${c}`, sujet);
+                            await set(`/#+/+.+:+.${c}`, sujet);
                             await set(`/#video/+.@(${c}).+.+.`, objet);
                             // ``;
-                            await set(c+now(), `(/@+.+.${objet}).(${sujet})`);
+                            //await set(c+'.'+now(), `(/@+.+.${objet}).(${sujet})`);
                             response.body =  await f(`(${c}).@+html.?`);
                         }
                         else if (sujet == '/@/+:inviter:+.+.') {    // Le proprio invite un non umain
