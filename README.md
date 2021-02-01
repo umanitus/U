@@ -9,8 +9,8 @@ U est construit sur les unités suivantes :
 * Le _serverless_ comme unité d'**opération** : tout U doit être hébergé en serveur less, aussi bien pour agir comme une fonction que pour se souvenir des informations par des clés ou des medias par du Cloud. Ce modèle permet de couter strictement à l'usage, afin d'éliminer les coûts fixes d'opérations.  
 * Le _propriétaire_ comme unité d'**action** : tout U est à 1 seul humain et ne communique directement qu'avec 1 seul humain et avec les Us des autres humains. 
 * Le _proxy_ comme unité d'**architecture** : tout U est à la fois client et serveur, donc proxy.  
-* Le _MSISDN_ comme unité de **chemin** vers son **domicile** : tout propriétaire est identifié par son numéro de mobile, qui est unique, universellement connu, maintenu par des sociétés installées, portable entre sociétés de maintenanc et suffisamment précieux pour signifier naturellement la familiarité  
-* La _carte_ comme unité de **style** : tout U affichage, stocke, traite, envoie et reçoit des cartes plutôt que des pages ou des messages pour organiser l'interaction    
+* Le _MSISDN_ comme unité de **chemin** vers son **domicile** : tout propriétaire est identifié par son numéro de mobile, qui est unique, universellement connu, maintenu par des sociétés installées, portable entre sociétés de maintenance et suffisamment précieux pour signifier naturellement la familiarité  
+* La _carte_ comme unité de **style** : tout U affiche, stocke, traite, envoie et reçoit des cartes plutôt que des pages ou des messages pour organiser l'interaction    
 * Le _HTTP_ comme unité de **sens** : tout U comprend un GET comme une question, un POST comme un ajout, un PUT comme un remplacement et un DELETE comme une suppression  
 * Le _certificat TLS_ comme **authenticité** : tout U et ses ressources sont hebergés sur un domaine certifié.  
 * Le _HTML_ comme unité de **lecture** : tout U répond du HTML soit à son humain, soit aux Us. Le HTML est enrichi à la marge de style en CSS et d'interactions en Javascript  
